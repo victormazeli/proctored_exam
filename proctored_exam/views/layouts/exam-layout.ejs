@@ -1,0 +1,19 @@
+<!-- views/layouts/exam-layout.ejs -->
+<%- include('./base-layout', {
+  title: title,
+  layoutCSS: 'exam',
+  bodyClass: 'min-h-screen flex flex-col bg-gray-50 text-gray-800 overflow-hidden',
+  headScripts: ['https://cdn.socket.io/4.5.0/socket.io.min.js']
+}) %>
+
+<script>
+  // Prevent tab closing/navigation
+  window.addEventListener('beforeunload', function(e) {
+    // Cancel the event
+    e.preventDefault();
+    // Chrome requires returnValue to be set
+    e.returnValue = 'You are in the middle of an exam. Are you sure you want to leave?';
+  });
+</script>
+
+<%- body %>
