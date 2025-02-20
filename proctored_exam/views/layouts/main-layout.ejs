@@ -1,0 +1,19 @@
+<!-- views/layouts/main-layout.ejs -->
+<%- include('./base-layout', {
+    title: title,
+    layoutCSS: 'main',
+    hideNavbar: hideNavbar,
+    hideFooter: hideFooter
+  }) %>
+  
+  <% if (typeof hideNavbar === 'undefined' || !hideNavbar) { %>
+    <%- include('../partials/header') %>
+  <% } %>
+  
+  <main class="flex-grow">
+    <%- body %>
+  </main>
+  
+  <% if (typeof hideFooter === 'undefined' || !hideFooter) { %>
+    <%- include('../partials/footer') %>
+  <% } %>

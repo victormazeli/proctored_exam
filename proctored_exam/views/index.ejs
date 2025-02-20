@@ -1,0 +1,289 @@
+<!-- views/index.ejs -->
+<%- include('./layouts/main-layout', { title: 'Welcome', hideFooter: false }) %>
+
+<!-- Hero Section -->
+<section class="relative bg-gradient-to-r from-blue-600 to-indigo-800 py-20 md:py-32">
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute left-0 right-0 top-0 h-40 bg-white opacity-10" style="border-radius: 0 0 100% 100%;"></div>
+    <svg class="absolute left-0 bottom-0 text-white text-opacity-5" width="800" height="320" fill="none">
+      <path d="M400 0C213.6 160 106.8 240 0 320h800C693.2 240 586.4 160 400 0z" fill="currentColor"/>
+    </svg>
+  </div>
+  
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="max-w-3xl mx-auto text-center">
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 leading-tight">
+        Ace Your Certification Exams with Confidence
+      </h1>
+      <p class="text-xl md:text-2xl text-blue-100 mb-10 leading-relaxed">
+        Practice with realistic exam simulations, get detailed analytics, and improve your skills with our comprehensive certification practice platform.
+      </p>
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <a href="/auth/register" class="btn-primary">
+          Get Started Free
+        </a>
+        <a href="/auth/login" class="btn-secondary">
+          Sign In
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16 md:py-24 bg-white">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose Our Platform?</h2>
+      <p class="text-lg text-gray-600">Designed by certification experts to help you succeed on your first attempt.</p>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-10">
+      <!-- Feature 1 -->
+      <div class="text-center p-6 rounded-lg hover:shadow-lg transition-shadow duration-300">
+        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-file-alt text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Realistic Exam Simulation</h3>
+        <p class="text-gray-600">Experience exam conditions with timed sessions, similar question formats, and adaptive difficulty.</p>
+      </div>
+      
+      <!-- Feature 2 -->
+      <div class="text-center p-6 rounded-lg hover:shadow-lg transition-shadow duration-300">
+        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-chart-line text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">Detailed Analytics</h3>
+        <p class="text-gray-600">Track your progress with comprehensive performance metrics to identify strengths and weaknesses.</p>
+      </div>
+      
+      <!-- Feature 3 -->
+      <div class="text-center p-6 rounded-lg hover:shadow-lg transition-shadow duration-300">
+        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-video text-2xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-3">AI-Powered Proctoring</h3>
+        <p class="text-gray-600">Practice in exam-like conditions with our sophisticated remote proctoring technology.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Certification Categories -->
+<section class="py-16 md:py-24 bg-gray-50">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Popular Certification Paths</h2>
+      <p class="text-lg text-gray-600">Prepare for in-demand certifications across multiple technology domains.</p>
+    </div>
+    
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Category 1 -->
+      <div class="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:transform hover:scale-105">
+        <div class="h-3 bg-blue-600"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 flex items-center">
+            <i class="fab fa-aws text-2xl text-blue-600 mr-3"></i>
+            AWS Certifications
+          </h3>
+          <p class="text-gray-600 mb-4">Prepare for Solutions Architect, Developer, SysOps Administrator, and specialty certifications.</p>
+          <a href="/exams/aws" class="text-blue-600 font-medium hover:text-blue-800 flex items-center">
+            View AWS exams <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 2 -->
+      <div class="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:transform hover:scale-105">
+        <div class="h-3 bg-blue-600"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 flex items-center">
+            <i class="fab fa-microsoft text-2xl text-blue-600 mr-3"></i>
+            Microsoft Azure
+          </h3>
+          <p class="text-gray-600 mb-4">Master Azure Administrator, Developer, Solutions Architect, and Security Engineer paths.</p>
+          <a href="/exams/azure" class="text-blue-600 font-medium hover:text-blue-800 flex items-center">
+            View Azure exams <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 3 -->
+      <div class="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:transform hover:scale-105">
+        <div class="h-3 bg-blue-600"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 flex items-center">
+            <i class="fas fa-cloud text-2xl text-blue-600 mr-3"></i>
+            Google Cloud
+          </h3>
+          <p class="text-gray-600 mb-4">Prepare for Associate and Professional level certifications in the Google Cloud ecosystem.</p>
+          <a href="/exams/gcp" class="text-blue-600 font-medium hover:text-blue-800 flex items-center">
+            View GCP exams <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 4 -->
+      <div class="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:transform hover:scale-105">
+        <div class="h-3 bg-blue-600"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 flex items-center">
+            <i class="fas fa-network-wired text-2xl text-blue-600 mr-3"></i>
+            Networking
+          </h3>
+          <p class="text-gray-600 mb-4">Practice for CCNA, CCNP, Network+, and other networking certification exams.</p>
+          <a href="/exams/networking" class="text-blue-600 font-medium hover:text-blue-800 flex items-center">
+            View networking exams <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 5 -->
+      <div class="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:transform hover:scale-105">
+        <div class="h-3 bg-blue-600"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 flex items-center">
+            <i class="fas fa-shield-alt text-2xl text-blue-600 mr-3"></i>
+            Security
+          </h3>
+          <p class="text-gray-600 mb-4">Prepare for Security+, CISSP, Certified Ethical Hacker, and other security certifications.</p>
+          <a href="/exams/security" class="text-blue-600 font-medium hover:text-blue-800 flex items-center">
+            View security exams <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+      
+      <!-- Category 6 -->
+      <div class="bg-white rounded-lg overflow-hidden shadow-md transition-transform duration-300 hover:transform hover:scale-105">
+        <div class="h-3 bg-blue-600"></div>
+        <div class="p-6">
+          <h3 class="text-xl font-semibold mb-3 flex items-center">
+            <i class="fas fa-code-branch text-2xl text-blue-600 mr-3"></i>
+            DevOps
+          </h3>
+          <p class="text-gray-600 mb-4">Master Docker, Kubernetes, Jenkins, Terraform, and other DevOps certifications.</p>
+          <a href="/exams/devops" class="text-blue-600 font-medium hover:text-blue-800 flex items-center">
+            View DevOps exams <i class="fas fa-arrow-right ml-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="text-center mt-12">
+      <a href="/exams/all" class="btn-outline">
+        View All Certification Exams
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-16 md:py-24 bg-white">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl mx-auto text-center mb-16">
+      <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What Our Users Say</h2>
+      <p class="text-lg text-gray-600">Join thousands of successful certification candidates who trusted our platform.</p>
+    </div>
+    
+    <div class="grid md:grid-cols-3 gap-8">
+      <!-- Testimonial 1 -->
+      <div class="bg-gray-50 p-6 rounded-lg relative">
+        <div class="absolute -top-4 left-6 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center">
+          <i class="fas fa-quote-left"></i>
+        </div>
+        <p class="text-gray-600 mb-6 pt-4">
+          "The practice exams were incredibly similar to the actual AWS certification. I passed my Solutions Architect exam on the first try thanks to this platform!"
+        </p>
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-gray-300 rounded-full overflow-hidden mr-3">
+            <img src="https://ui-avatars.com/api/?name=Michael+Johnson&background=0D8ABC&color=fff" alt="Michael Johnson">
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-900">Michael Johnson</h4>
+            <p class="text-sm text-gray-500">AWS Certified Solutions Architect</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Testimonial 2 -->
+      <div class="bg-gray-50 p-6 rounded-lg relative">
+        <div class="absolute -top-4 left-6 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center">
+          <i class="fas fa-quote-left"></i>
+        </div>
+        <p class="text-gray-600 mb-6 pt-4">
+          "The detailed analytics helped me identify my weak areas in Azure. After focusing on those topics, I scored 905/1000 on my Administrator exam!"
+        </p>
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-gray-300 rounded-full overflow-hidden mr-3">
+            <img src="https://ui-avatars.com/api/?name=Sarah+Williams&background=2E7D32&color=fff" alt="Sarah Williams">
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-900">Sarah Williams</h4>
+            <p class="text-sm text-gray-500">Azure Administrator Associate</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Testimonial 3 -->
+      <div class="bg-gray-50 p-6 rounded-lg relative">
+        <div class="absolute -top-4 left-6 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center">
+          <i class="fas fa-quote-left"></i>
+        </div>
+        <p class="text-gray-600 mb-6 pt-4">
+          "The proctoring feature helped me get comfortable with being monitored during an exam. No surprises on exam day, and I passed my CISSP with confidence!"
+        </p>
+        <div class="flex items-center">
+          <div class="w-10 h-10 bg-gray-300 rounded-full overflow-hidden mr-3">
+            <img src="https://ui-avatars.com/api/?name=David+Chen&background=C62828&color=fff" alt="David Chen">
+          </div>
+          <div>
+            <h4 class="font-medium text-gray-900">David Chen</h4>
+            <p class="text-sm text-gray-500">CISSP Certified</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 md:py-20 bg-gradient-to-r from-blue-600 to-indigo-800 text-white">
+  <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl md:text-4xl font-bold mb-6">Ready to Ace Your Next Certification?</h2>
+      <p class="text-xl text-blue-100 mb-8">Join thousands of successful certification candidates who prepared with our platform.</p>
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <a href="/auth/register" class="btn-white">
+          Start Free Trial
+        </a>
+        <a href="/pricing" class="btn-white-outline">
+          View Pricing
+        </a>
+      </div>
+      <p class="mt-6 text-sm text-blue-200">No credit card required. Free trial includes 5 practice exams.</p>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* Custom button styles */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-900 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-colors;
+  }
+  
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-6 py-3 border border-blue-600 text-base font-medium rounded-md text-blue-600 bg-transparent hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors;
+  }
+  
+  .btn-white {
+    @apply inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-colors;
+  }
+  
+  .btn-white-outline {
+    @apply inline-flex items-center justify-center px-6 py-3 border border-white text-base font-medium rounded-md text-white bg-transparent hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white transition-colors;
+  }
+</style>
