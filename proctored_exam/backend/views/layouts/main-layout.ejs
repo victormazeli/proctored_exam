@@ -1,0 +1,20 @@
+<!-- views/layouts/main-layout.ejs -->
+<%- include('./base-layout', {
+  title: title,
+  hideNavbar: hideNavbar,
+  hideFooter: hideFooter
+}) %>
+
+<body class="<%= typeof bodyClass !== 'undefined' ? bodyClass : 'min-h-screen flex flex-col bg-gray-50 text-gray-800' %>">
+<% if (typeof hideNavbar === 'undefined' || !hideNavbar) { %>
+  <%- include('../partials/header') %>
+<% } %>
+
+<main class="flex-grow">
+  <%- body %>
+</main>
+
+<% if (typeof hideFooter === 'undefined' || !hideFooter) { %>
+  <%- include('../partials/footer') %>
+<% } %>
+</body>
