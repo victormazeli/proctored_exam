@@ -20,6 +20,13 @@ import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
 import { HttpClientModule } from '@angular/common/http';
 import { WebCamPermissionModalComponent } from './components/shared/webcam-permission-modal/webcam-permission-modal.component';
 import { ExamInstructionsComponent } from './pages/exam/exam-instructions/exam-instructions.component';
+import { ExamResultsComponent } from './pages/exam/exam-results/exam-results.component';
+import { AuthComponent } from './pages/admin/auth/auth.component';
+import { DashboardComponent } from './pages/admin/dashboard/dashboard.component';
+import { UsersComponent } from './pages/admin/users/users.component';
+import { AdminCertificationsComponent  } from './pages/admin/certification/certification.component';
+import { CommonModule } from '@angular/common';
+import { AdminQuestionsComponent } from './pages/admin/question/question.component';
 
 
 // Configure Socket.io with your backend URL
@@ -47,10 +54,17 @@ const config: SocketIoConfig = {
     TimeWarningModalComponent,
     ProctorWarningModalComponent,
     WebCamPermissionModalComponent,
-    ExamInstructionsComponent
+    ExamInstructionsComponent,
+    ExamResultsComponent,
+    AuthComponent,
+    DashboardComponent,
+    UsersComponent,
+    AdminCertificationsComponent,
+    AdminQuestionsComponent
   ],
   imports: [
     BrowserModule,
+    CommonModule,
     FormsModule,
     AppRoutingModule,
     HttpClientModule,
