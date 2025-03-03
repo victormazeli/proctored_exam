@@ -43,7 +43,6 @@ router.post('/register', [
         return true;
       })], authController.postRegister);
 
-router.post('/admin/create', authController.createAdminUser);
 router.get('/logout', authController.logout);
 router.get('/forgot-password', authController.getForgotPassword);
 

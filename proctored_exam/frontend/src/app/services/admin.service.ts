@@ -3,12 +3,13 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { environment } from 'src/environment/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminService {
-  private apiUrl = '/api/admin'; // Base API URL for admin endpoints
+  private apiUrl = `${environment.api}/api/admin` // Base API URL for admin endpoints
 
   constructor(private http: HttpClient) {}
 
@@ -29,6 +30,36 @@ export class AdminService {
       );
   }
 
+  /**
+   * 
+   * @description Create User
+   * 
+   */
+
+  createUser(data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/users`, data)
+  }
+
+    /**
+   * 
+   * @description Get User details
+   * 
+   */
+
+    getUserDetails(userId: any): Observable<any> {
+      return this.http.get(`${this.apiUrl}/users/${userId}`)
+    }
+
+    /**
+     * 
+     * @description Update User role
+     */
+
+    changeUserRole(userId: any, role: any): Observable<any>{
+      return this.http.put(`${this.apiUrl}/users/${userId}/role`, {role});
+    }
+
+
   getActiveExamCount(): Observable<{count: number}> {
     return this.http.get<{count: number}>(`${this.apiUrl}/active-exams/count`)
       .pipe(
@@ -37,8 +68,17 @@ export class AdminService {
   }
 
   // Certification methods
-  getCertifications(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/certifications`)
+  getCertifications(params?: any): Observable<any> {
+    let httpParams = new HttpParams();
+    
+    if (params) {
+      Object.keys(params).forEach(key => {
+        if (params[key]) {
+          httpParams = httpParams.append(key, params[key]);
+        }
+      });
+    }
+    return this.http.get<any>(`${this.apiUrl}/certifications`, {params: httpParams})
       .pipe(
         catchError(this.handleError('getCertifications', { certifications: [], certStats: {} }))
       );
@@ -53,29 +93,20 @@ export class AdminService {
 
   getCertificationDomains(certId: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/certifications/${certId}/domains`)
-      .pipe(
-        catchError(this.handleError('getCertificationDomains', { success: false, domains: [] }))
-      );
   }
 
   getAllDomains(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/domains`)
-      .pipe(
-        catchError(this.handleError('getAllDomains', { success: false, domains: [] }))
-      );
   }
 
-  saveCertification(certification: any, isUpdate: boolean): Observable<any> {
-    const url = isUpdate 
-      ? `${this.apiUrl}/certifications/${certification.id}` 
-      : `${this.apiUrl}/certifications`;
-    const method = isUpdate ? 'put' : 'post';
-    
-    return this.http[method](url, certification)
-      .pipe(
-        catchError(this.handleError(`${isUpdate ? 'updateCertification' : 'createCertification'}`, { success: false }))
-      );
+  createCertification(certification: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/certifications`, certification)
   }
+
+  updateCertification(certificationId: any, certification: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/certifications/${certificationId}` , certification)
+  }
+
 
   updateCertificationStatus(id: string, active: boolean): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/certifications/${id}`, { active })
@@ -115,9 +146,6 @@ export class AdminService {
     const method = isUpdate ? 'put' : 'post';
     
     return this.http[method](url, exam)
-      .pipe(
-        catchError(this.handleError(`${isUpdate ? 'updateExam' : 'createExam'}`, { success: false }))
-      );
   }
 
   updateExamStatus(id: string, active: boolean): Observable<any> {

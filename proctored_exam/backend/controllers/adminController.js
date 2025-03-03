@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const Papa = require('papaparse');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 
 /**
  * Render admin dashboard
@@ -55,6 +56,82 @@ exports.getDashboard = async (req, res) => {
 };
 
 /**
+ * Create User
+ */
+exports.createUser = async (req, res) => {
+  // Ensure the requester is an admin
+  // if (!req.user || req.user.role !== 'admin') {
+  //   return res.status(403).json({
+  //     success: false,
+  //     message: 'Unauthorized access'
+  //   });
+  // }
+
+
+  const { username, email, password, name, role} = req.body;
+
+  try {
+    // Check if user already exists
+    const existingUser = await User.findOne({
+      $or: [
+        { username: username.toLowerCase() },
+        { email: email.toLowerCase() }
+      ]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username or email already exists'
+      });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const newUser = new User({
+      username: username.toLowerCase(),
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      role: role,
+      profile: {
+        name: name || username,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name || username)}&background=0D8ABC&color=fff`
+      },
+      settings: {
+        proctorEnabled: true,
+        notificationsEnabled: true
+      },
+      metrics: {
+        totalAttempts: 0,
+        examsPassed: 0,
+        averageScore: 0,
+        totalTimeSpent: 0
+      }
+    });
+
+    await newUser.save();
+
+    // Log user creation
+    // console.log(`New admin created by ${req.user.username}: ${username} at ${new Date().toISOString()}`);
+
+    return res.json({
+      success: true,
+      message: 'User created successfully'
+    });
+  } catch (err) {
+    console.error('User creation error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred during user creation'
+    });
+  }
+};
+
+
+/**
  * Render user management page
  */
 exports.getUsers = async (req, res) => {
@@ -73,57 +150,88 @@ exports.getUsers = async (req, res) => {
     }
     
     // Exclude the current admin user
-    query._id = { $ne: req.user._id };
+    // query._id = { $ne: req.user._id };
     
     const totalUsers = await User.countDocuments(query);
     const totalPages = Math.ceil(totalUsers / limit);
     
     const users = await User.find(query)
-      .select('username email role profile.name createdAt metrics')
+      .select('username email role profile.name, profile.avatar createdAt metrics')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
     
-    res.render('admin/users', {
-      title: 'User Management',
+    return res.status(200).json({
+      success: true,
+      data: {
       users,
       pagination: {
         page,
         limit,
         totalPages,
         totalUsers
-      },
-      search
-    });
+      }
+      }
+    })
   } catch (err) {
     console.error('Error loading users:', err);
-    req.flash('error_msg', 'Failed to load users');
-    res.redirect('/admin');
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to load users' 
+    });
   }
 };
+
+exports.getUser = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const user = await User.findById(userId).select('username email role profile.name, profile.avatar createdAt metrics');
+
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User Not found' 
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: user
+    })
+    
+  } catch (error) {
+    console.error('Error loading user:', err);
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to load user' 
+    });
+  }
+}
 
 /**
  * Update user role
  */
 exports.updateUserRole = async (req, res) => {
   try {
-    const { userId, role } = req.body;
+    const userId = req.params.userId;
+
+    const { role } = req.body;
     
     if (!['user', 'admin'].includes(role)) {
       return res.status(400).json({ success: false, message: 'Invalid role' });
     }
     
     // Prevent changing own role
-    if (userId === req.user._id.toString()) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Cannot change your own role' 
-      });
-    }
+    // if (userId === req.user._id.toString()) {
+    //   return res.status(400).json({ 
+    //     success: false, 
+    //     message: 'Cannot change your own role' 
+    //   });
+    // }
     
     await User.findByIdAndUpdate(userId, { role });
     
-    return res.json({ success: true });
+    return res.status(200).json({ success: true, data: null });
   } catch (err) {
     console.error('Error updating user role:', err);
     return res.status(500).json({ 
@@ -143,18 +251,55 @@ exports.getCertification = async (req, res) => {
     
     const certification = await Certification.findById(id);
     if (!certification) {
-      req.flash('error_msg', 'Certification not found');
-      return res.redirect('/admin/certifications');
+      return res.status(404).json({ success: false, message: 'Certification not found' });
     }
-    
-    res.render('admin/certification', {
-      title: certification.name,
-      certification
-    });
+
+    return res.status(200).json({
+      success: true,
+      data: certification
+    })
   } catch (err) {
     console.error('Error loading certification:', err);
-    req.flash('error_msg', 'Failed to load certification');
-    res.redirect('/admin/certifications');
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to load certification' 
+    });
+  }
+};
+
+
+/**
+ * Get all domains across all certifications
+ * @route GET /api/domains
+ */
+exports.getAllDomains = async (req, res) => {
+  try {
+    // Fetch all certifications with their domains
+    const certifications = await Certification.find().lean();
+    
+    // Extract and flatten all domains
+    const allDomains = [];
+    certifications.forEach(cert => {
+      // Add certification info to each domain
+      const domainsWithCertInfo = cert.domains.map(domain => ({
+        ...domain,
+        // certificationId: cert._id,
+        // certificationName: cert.name,
+        // certificationCode: cert.code
+      }));
+      
+      allDomains.push(...domainsWithCertInfo);
+    });
+    
+    return res.status(200).json({
+      success: true,
+      data: allDomains
+    });
+  } catch (error) {
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to load domains' 
+    });
   }
 };
 
@@ -217,8 +362,26 @@ exports.getQuestion = async (req, res) => {
  */
 exports.getCertifications = async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || '';
+    
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { 'domain.name': { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    
+    const totalCerts = await Certification.countDocuments(query);
+    const totalPages = Math.ceil(totalCerts / limit);
+
     const certifications = await Certification.find()
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit);
     
     // Get stats for each certification
     const certStats = await Promise.all(
@@ -245,18 +408,29 @@ exports.getCertifications = async (req, res) => {
       })
     );
     
-    res.render('admin/certifications', {
-      title: 'Certification Management',
-      certifications,
-      certStats: certStats.reduce((acc, stat) => {
-        acc[stat.id] = stat;
-        return acc;
-      }, {})
-    });
+   
+    return res.status(200).json({
+      success: true,
+      data: {
+        certifications,
+        certStats: certStats.reduce((acc, stat) => {
+          acc[stat.id] = stat;
+          return acc;
+        }, {}),
+        pagination: {
+          page,
+          limit,
+          totalPages,
+          totalCerts
+        }
+      }
+    })
   } catch (err) {
     console.error('Error loading certifications:', err);
-    req.flash('error_msg', 'Failed to load certifications');
-    res.redirect('/admin');
+    return res.stats(500).json({
+      success: false,
+      message: 'Error loading certifications'
+    })
   }
 };
 
@@ -265,13 +439,6 @@ exports.getCertifications = async (req, res) => {
  */
 exports.createCertification = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        errors: errors.array() 
-      });
-    }
     
     const { name, code, provider, description, passingScore, timeLimit, domains } = req.body;
     
@@ -313,7 +480,7 @@ exports.createCertification = async (req, res) => {
       timeLimit: parseInt(timeLimit),
       domains: parsedDomains,
       active: true,
-      createdBy: req.user._id
+      // createdBy: req.user._id
     });
     
     await newCertification.save();
@@ -405,17 +572,21 @@ exports.getExams = async (req, res) => {
     
     const certifications = await Certification.find({ active: true })
       .select('name code');
-    
-    res.render('admin/exams', {
-      title: 'Exam Management',
+
+
+    return res.status(200).json({
+      success: true,
       exams,
       certifications,
       selectedCertification: certificationId
     });
+
   } catch (err) {
     console.error('Error loading exams:', err);
-    req.flash('error_msg', 'Failed to load exams');
-    res.redirect('/admin');
+     return res.status(500).json({ 
+      success: false, 
+      message: 'Error loading exams' 
+    });
   }
 };
 
@@ -424,13 +595,6 @@ exports.getExams = async (req, res) => {
  */
 exports.createExam = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ 
-        success: false, 
-        errors: errors.array() 
-      });
-    }
     
     const {
       name,
@@ -634,28 +798,27 @@ exports.getQuestions = async (req, res) => {
         domains = selectedCert.domains.map(d => d.name);
       }
     }
-    
-    res.render('admin/questions', {
-      title: 'Question Management',
-      questions,
-      certifications,
-      domains,
-      pagination: {
-        page,
-        limit,
-        totalPages,
-        totalQuestions
-      },
-      filters: {
-        certification: certificationId,
-        domain,
-        search
+
+    return res.status(200).json({
+      status: true,
+      data: {
+        questions,
+        certifications,
+        domains,
+        pagination: {
+          page,
+          limit,
+          totalPages,
+          totalQuestions
+        },
       }
-    });
+    })
   } catch (err) {
     console.error('Error loading questions:', err);
-    req.flash('error_msg', 'Failed to load questions');
-    res.redirect('/admin');
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to load questions' 
+    });
   }
 };
 
@@ -676,7 +839,7 @@ exports.getCertificationDomains = async (req, res) => {
     
     return res.json({
       success: true,
-      domains: certification.domains
+      data: certification.domains
     });
   } catch (err) {
     console.error('Error getting certification domains:', err);

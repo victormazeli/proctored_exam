@@ -1,277 +1,143 @@
 <!-- admin-certifications.component.html -->
 <div class="admin-certifications">
-    <div class="container mx-auto px-4 py-8">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Certification Management</h1>
-        <button (click)="openAddCertificationModal()" class="btn btn-primary">
-          <i class="fas fa-plus mr-2"></i> Add Certification
-        </button>
-      </div>
-  
-      <!-- Certifications Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <ng-container *ngIf="certifications && certifications.length > 0; else noCertifications">
-          <div *ngFor="let cert of certifications" class="certification-card">
-            <div class="cert-header">
-              <div class="cert-icon">
-                <i *ngIf="cert.provider.toLowerCase() === 'aws'" class="fab fa-aws"></i>
-                <i *ngIf="cert.provider.toLowerCase() === 'terraform'" class="fas fa-cube"></i>
-                <i *ngIf="cert.provider.toLowerCase() === 'kubernetes'" class="fas fa-dharmachakra"></i>
-                <i *ngIf="!['aws', 'terraform', 'kubernetes'].includes(cert.provider.toLowerCase())" class="fas fa-certificate"></i>
-              </div>
-              <div class="cert-info">
-                <h3 class="cert-name">{{ cert.name }}</h3>
-                <div class="cert-code">{{ cert.code }}</div>
-                <div class="cert-provider">Provider: {{ cert.provider }}</div>
-              </div>
-              <div class="cert-status" [ngClass]="cert.active ? 'active' : 'inactive'">
-                {{ cert.active ? 'Active' : 'Inactive' }}
-              </div>
+  <div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-gray-800">Certification Management</h1>
+      <button (click)="openAddCertificationModal()" class="btn btn-primary">
+        <i class="fas fa-plus mr-2"></i> Add Certification
+      </button>
+    </div>
+
+    <!-- Certifications Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <ng-container *ngIf="certifications && certifications.length > 0; else noCertifications">
+        <div *ngFor="let cert of certifications" class="certification-card">
+          <div class="cert-header">
+            <div class="cert-icon">
+              <i *ngIf="cert.provider.toLowerCase() === 'aws'" class="fab fa-aws"></i>
+              <i *ngIf="cert.provider.toLowerCase() === 'terraform'" class="fas fa-cube"></i>
+              <i *ngIf="cert.provider.toLowerCase() === 'kubernetes'" class="fas fa-dharmachakra"></i>
+              <i *ngIf="!['aws', 'terraform', 'kubernetes'].includes(cert.provider.toLowerCase())" class="fas fa-certificate"></i>
             </div>
-  
-            <div class="cert-stats">
-              <div class="stat-item">
-                <div class="stat-icon bg-purple-100 text-purple-600">
-                  <i class="fas fa-tasks"></i>
-                </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ certStats[cert._id]?.examCount || 0 }}</div>
-                  <div class="stat-label">Exams</div>
-                </div>
-              </div>
-  
-              <div class="stat-item">
-                <div class="stat-icon bg-blue-100 text-blue-600">
-                  <i class="fas fa-question"></i>
-                </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ certStats[cert._id]?.questionCount || 0 }}</div>
-                  <div class="stat-label">Questions</div>
-                </div>
-              </div>
-  
-              <div class="stat-item">
-                <div class="stat-icon bg-green-100 text-green-600">
-                  <i class="fas fa-user-check"></i>
-                </div>
-                <div class="stat-content">
-                  <div class="stat-value">{{ certStats[cert._id]?.attemptCount || 0 }}</div>
-                  <div class="stat-label">Attempts</div>
-                </div>
-              </div>
+            <div class="cert-info">
+              <h3 class="cert-name">{{ cert.name }}</h3>
+              <div class="cert-code">{{ cert.code }}</div>
+              <div class="cert-provider">Provider: {{ cert.provider }}</div>
             </div>
-  
-            <div class="cert-details">
-              <div class="detail-row">
-                <div class="detail-label">Passing Score:</div>
-                <div class="detail-value">{{ cert.passingScore }}%</div>
-              </div>
-  
-              <div class="detail-row">
-                <div class="detail-label">Time Limit:</div>
-                <div class="detail-value">{{ cert.timeLimit }} min</div>
-              </div>
-  
-              <div class="detail-row">
-                <div class="detail-label">Domains:</div>
-                <div class="detail-value">{{ cert.domains.length }}</div>
-              </div>
-            </div>
-  
-            <div class="domains-preview">
-              <div class="domains-header">Domains</div>
-              <div class="domains-list">
-                <div *ngFor="let domain of cert.domains.slice(0, 3)" class="domain-badge">
-                  {{ domain.name }}
-                </div>
-                
-                <div *ngIf="cert.domains.length > 3" class="domain-badge more">
-                  +{{ cert.domains.length - 3 }} more
-                </div>
-              </div>
-            </div>
-  
-            <div class="cert-actions">
-              <button (click)="openEditCertificationModal(cert._id)" class="btn btn-outline btn-sm">
-                <i class="fas fa-edit mr-1"></i> Edit
-              </button>
-              <button (click)="viewDomains(cert._id)" class="btn btn-outline btn-sm">
-                <i class="fas fa-list-ul mr-1"></i> Domains
-              </button>
-              <button (click)="toggleCertificationStatus(cert)" 
-                      class="btn" 
-                      [ngClass]="cert.active ? 'btn-outline' : 'btn-secondary'" 
-                      [ngClass]="{'btn-sm': true}">
-                <i class="fas" [ngClass]="cert.active ? 'fa-toggle-off' : 'fa-toggle-on'" class="mr-1"></i>
-                {{ cert.active ? 'Deactivate' : 'Activate' }}
-              </button>
+            <div class="cert-status" [ngClass]="cert.active ? 'active' : 'inactive'">
+              {{ cert.active ? 'Active' : 'Inactive' }}
             </div>
           </div>
-        </ng-container>
-        
-        <ng-template #noCertifications>
-          <div class="col-span-3 text-center py-12 bg-white rounded-lg shadow">
-            <div class="text-gray-400 mb-4">
-              <i class="fas fa-certificate text-5xl"></i>
+
+          <div class="cert-stats">
+            <div class="stat-item">
+              <div class="stat-icon bg-purple-100 text-purple-600">
+                <i class="fas fa-tasks"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ certStats[cert._id].examCount || 0 }}</div>
+                <div class="stat-label">Exams</div>
+              </div>
             </div>
-            <h3 class="text-xl font-medium text-gray-700 mb-2">No Certifications Available</h3>
-            <p class="text-gray-500 mb-4">Get started by adding your first certification.</p>
-            <button (click)="openAddCertificationModal()" class="btn btn-primary">
-              <i class="fas fa-plus mr-2"></i> Add Certification
+
+            <div class="stat-item">
+              <div class="stat-icon bg-blue-100 text-blue-600">
+                <i class="fas fa-question"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ certStats[cert._id].questionCount || 0 }}</div>
+                <div class="stat-label">Questions</div>
+              </div>
+            </div>
+
+            <div class="stat-item">
+              <div class="stat-icon bg-green-100 text-green-600">
+                <i class="fas fa-user-check"></i>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ certStats[cert._id].attemptCount || 0 }}</div>
+                <div class="stat-label">Attempts</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cert-details">
+            <div class="detail-row">
+              <div class="detail-label">Passing Score:</div>
+              <div class="detail-value">{{ cert.passingScore }}%</div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-label">Time Limit:</div>
+              <div class="detail-value">{{ cert.timeLimit }} min</div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-label">Domains:</div>
+              <div class="detail-value">{{ cert.domains.length }}</div>
+            </div>
+          </div>
+
+          <div class="domains-preview">
+            <div class="domains-header">Domains</div>
+            <div class="domains-list">
+              <div *ngFor="let domain of cert.domains.slice(0, 3)" class="domain-badge">
+                {{ domain.name }}
+              </div>
+              
+              <div *ngIf="cert.domains.length > 3" class="domain-badge more">
+                +{{ cert.domains.length - 3 }} more
+              </div>
+            </div>
+          </div>
+
+          <div class="cert-actions">
+            <button (click)="openEditCertificationModal(cert._id)" class="btn btn-outline btn-sm">
+              <i class="fas fa-edit mr-1"></i> Edit
+            </button>
+            <button (click)="viewDomains(cert._id)" class="btn btn-outline btn-sm">
+              <i class="fas fa-list-ul mr-1"></i> Domains
+            </button>
+            <button (click)="toggleCertificationStatus(cert)" 
+                    class="btn" 
+                    [ngClass]="cert.active ? 'btn-outline' : 'btn-secondary'" 
+                    [ngClass]="{'btn-sm': true}">
+              <i class="fas" [ngClass]="cert.active ? 'fa-toggle-off' : 'fa-toggle-on'" class="mr-1"></i>
+              {{ cert.active ? 'Deactivate' : 'Activate' }}
             </button>
           </div>
-        </ng-template>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Certification Modal -->
-  <div *ngIf="showCertificationModal" class="modal">
-    <div class="modal-overlay" (click)="closeCertificationModal()"></div>
-    <div class="modal-container">
-      <div class="modal-header">
-        <h2>{{ modalTitle }}</h2>
-        <button (click)="closeCertificationModal()" class="modal-close">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <form (ngSubmit)="saveCertification()" #certForm="ngForm">
-          <input type="hidden" [(ngModel)]="certificationForm.id" name="id">
-  
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="form-group md:col-span-2">
-              <label for="certification-name" class="form-label required">Certification Name</label>
-              <input type="text" id="certification-name" [(ngModel)]="certificationForm.name" name="name" 
-                    class="form-input" placeholder="AWS Certified Solutions Architect - Associate" required>
-            </div>
-  
-            <div class="form-group">
-              <label for="certification-code" class="form-label required">Certification Code</label>
-              <input type="text" id="certification-code" [(ngModel)]="certificationForm.code" name="code" 
-                    class="form-input" placeholder="SAA-C03" required>
-            </div>
-  
-            <div class="form-group">
-              <label for="certification-provider" class="form-label required">Provider</label>
-              <select id="certification-provider" [(ngModel)]="certificationForm.provider" name="provider" 
-                     class="form-select" required>
-                <option value="">Select Provider</option>
-                <option value="AWS">AWS</option>
-                <option value="Terraform">Terraform</option>
-                <option value="Kubernetes">Kubernetes</option>
-                <option value="Microsoft">Microsoft</option>
-                <option value="Google">Google</option>
-                <option value="Oracle">Oracle</option>
-                <option value="Cisco">Cisco</option>
-                <option value="CompTIA">CompTIA</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-  
-            <div class="form-group md:col-span-2">
-              <label for="certification-description" class="form-label">Description</label>
-              <textarea id="certification-description" [(ngModel)]="certificationForm.description" name="description" 
-                       class="form-textarea" rows="3" 
-                       placeholder="Validates expertise in designing distributed applications and systems on AWS..."></textarea>
-            </div>
-  
-            <div class="form-group">
-              <label for="certification-passing-score" class="form-label required">Passing Score (%)</label>
-              <input type="number" id="certification-passing-score" [(ngModel)]="certificationForm.passingScore" 
-                    name="passingScore" class="form-input" min="1" max="100" required>
-            </div>
-  
-            <div class="form-group">
-              <label for="certification-time-limit" class="form-label required">Time Limit (minutes)</label>
-              <input type="number" id="certification-time-limit" [(ngModel)]="certificationForm.timeLimit" 
-                    name="timeLimit" class="form-input" min="1" max="1440" required>
-            </div>
-          </div>
-  
-          <div class="form-group mt-4">
-            <label class="form-label required">Domains</label>
-            <div class="space-y-3 mt-2">
-              <div *ngFor="let domain of certificationForm.domains; let i = index" class="grid grid-cols-5 gap-2">
-                <div class="col-span-4">
-                  <input type="text" [(ngModel)]="domain.name" [name]="'domain_' + i + '_name'" 
-                         class="form-input" placeholder="Domain name" required>
-                </div>
-                <div class="col-span-1 flex">
-                  <button type="button" (click)="removeDomain(i)" class="btn btn-outline btn-sm w-full" 
-                          [ngClass]="{'disabled opacity-50 cursor-not-allowed': certificationForm.domains.length <= 1}">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-  
-            <button type="button" (click)="addDomain()" class="mt-3 text-sm text-blue-600 hover:text-blue-800">
-              <i class="fas fa-plus-circle mr-1"></i> Add Domain
-            </button>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button (click)="saveCertification()" class="btn btn-primary">Save Certification</button>
-        <button (click)="closeCertificationModal()" class="btn btn-outline">Cancel</button>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Domains Modal -->
-  <div *ngIf="showDomainsModal" class="modal">
-    <div class="modal-overlay" (click)="closeDomainsModal()"></div>
-    <div class="modal-container">
-      <div class="modal-header">
-        <h2>Certification Domains</h2>
-        <button (click)="closeDomainsModal()" class="modal-close">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div *ngIf="domainsLoading" class="text-center py-8">
-          <div class="spinner"></div>
-          <p class="mt-2 text-gray-600">Loading domains...</p>
         </div>
-  
-        <div *ngIf="!domainsLoading && selectedCertification">
-          <div class="text-lg font-medium text-gray-800 mb-4">{{ selectedCertification.name }}</div>
-  
-          <div class="domains-table-container" *ngIf="selectedCertification.domains && selectedCertification.domains.length > 0">
-            <table class="w-full">
-              <thead>
-                <tr>
-                  <th class="th-cell">Domain Name</th>
-                  <th class="th-cell">Weight (%)</th>
-                  <th class="th-cell">Question Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let domain of selectedCertification.domains">
-                  <td class="td-cell font-medium">{{ domain.name }}</td>
-                  <td class="td-cell">{{ domain.weight || 'N/A' }}</td>
-                  <td class="td-cell">{{ 50 }}</td> <!-- Placeholder value -->
-                </tr>
-              </tbody>
-            </table>
+      </ng-container>
+      
+      <ng-template #noCertifications>
+        <div class="col-span-3 text-center py-12 bg-white rounded-lg shadow">
+          <div class="text-gray-400 mb-4">
+            <i class="fas fa-certificate text-5xl"></i>
           </div>
-  
-          <div *ngIf="!selectedCertification.domains || selectedCertification.domains.length === 0" 
-               class="text-center py-8">
-            <div class="text-gray-400 mb-4">
-              <i class="fas fa-list-ul text-4xl"></i>
-            </div>
-            <h3 class="text-lg font-medium text-gray-700 mb-2">No Domains Defined</h3>
-            <p class="text-gray-500">This certification doesn't have any domains defined.</p>
-          </div>
+          <h3 class="text-xl font-medium text-gray-700 mb-2">No Certifications Available</h3>
+          <p class="text-gray-500 mb-4">Get started by adding your first certification.</p>
+          <button (click)="openAddCertificationModal()" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i> Add Certification
+          </button>
         </div>
-      </div>
-      <div class="modal-footer">
-        <button *ngIf="selectedCertification" (click)="editDomains(selectedCertification._id)" class="btn btn-primary">
-          Edit Domains
-        </button>
-        <button (click)="closeDomainsModal()" class="btn btn-outline">Close</button>
-      </div>
+      </ng-template>
     </div>
   </div>
+</div>
+
+<!-- Using the standalone modal components -->
+<app-create-certification-modal 
+  [visible]="showCertificationModal"
+  [isEdit]="!!certificationForm.id"
+  [certificationData]="certificationForm"
+  (save)="saveCertification($event)"
+  (cancel)="closeCertificationModal()">
+</app-create-certification-modal>
+
+<app-domains-modal
+  [visible]="showDomainsModal"
+  [certification]="selectedCertification"
+  [loading]="domainsLoading"
+  (edit)="editDomains($event)"
+  (close)="closeDomainsModal()">
+</app-domains-modal>

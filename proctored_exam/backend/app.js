@@ -6,9 +6,9 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const path = require('path');
 const passport = require('passport');
-const flash = require('connect-flash');
 const morgan = require('morgan');
 const helmet = require('helmet');
+const cors = require('cors');
 const compression = require('compression');
 const socketio = require('socket.io');
 const { createServer } = require('http');
@@ -43,6 +43,8 @@ mongoose.connect(process.env.MONGODB_URI, {
 })
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.error('MongoDB connection error:', err));
+
+app.use(cors());
 
 // Configure middleware
 app.use(helmet({
@@ -85,16 +87,16 @@ app.use(passport.session());
 require('./config/passport')(passport);
 
 // Flash messages
-app.use(flash());
+// app.use(flash());
 
-// Global variables
-app.use((req, res, next) => {
-  res.locals.user = req.user || null;
-  res.locals.success_msg = req.flash('success_msg');
-  res.locals.error_msg = req.flash('error_msg');
-  res.locals.error = req.flash('error');
-  next();
-});
+// // Global variables
+// app.use((req, res, next) => {
+//   res.locals.user = req.user || null;
+//   res.locals.success_msg = req.flash('success_msg');
+//   res.locals.error_msg = req.flash('error_msg');
+//   res.locals.error = req.flash('error');
+//   next();
+// });
 
 // Analytics tracking
 // app.use(trackAnalytics);
@@ -104,10 +106,10 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Routes
-app.use('/auth', authRoutes);
-app.use('/exams', examRoutes);
-app.use('/admin/questions', questionRoutes);
-app.use('/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api//exams', examRoutes);
+app.use('/api//admin/questions', questionRoutes);
+app.use('/api/admin', adminRoutes);
 // app.use('/analytics', analyticsRoutes);
 app.use('/proctor', proctorRoutes);
 

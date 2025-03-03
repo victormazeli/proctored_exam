@@ -1,12 +1,16 @@
 // admin-certifications.component.ts
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { AdminService } from 'src/app/services/admin.service';
+import { NotificationService } from 'src/app/services/notification.service';
+import { CertificationFormData } from './create-certification-modal/create-certification-modal.component';
 
 interface Certification {
   _id: string;
   name: string;
   code: string;
   provider: string;
+  description: string;
   active: boolean;
   passingScore: number;
   timeLimit: number;
@@ -37,66 +41,35 @@ export class AdminCertificationsComponent implements OnInit {
   showCertificationModal = false;
   showDomainsModal = false;
   modalTitle = 'Add New Certification';
-  selectedCertification: any = null;
   domainsLoading = false;
   
-  // Form model
-  certificationForm: any = {
-    id: '',
-    name: '',
-    code: '',
-    provider: '',
-    description: '',
-    passingScore: 72,
-    timeLimit: 180,
-    domains: [{ name: '' }]
-  };
+  // Certification modal properties
+  certificationForm: CertificationFormData = this.getEmptyCertification();
+  selectedCertification: Certification | null = null;
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private notificationService: NotificationService
+  ) {}
 
   ngOnInit(): void {
     this.loadCertifications();
   }
 
   loadCertifications(): void {
-    this.adminService.getCertifications().subscribe(
-      data => {
-        this.certifications = data.certifications;
-        this.certStats = data.certStats;
+    this.adminService.getCertifications().subscribe({
+     next: data => {
+      console.log(data)
+        this.certifications = data.data.certifications;
+        this.certStats = data.data.certStats;
       },
-      error => console.error('Error loading certifications:', error)
-    );
+     error: error => console.error('Error loading certifications:', error)
+  });
   }
 
   openAddCertificationModal(): void {
-    this.resetForm();
-    this.modalTitle = 'Add New Certification';
+    this.certificationForm = this.getEmptyCertification();
     this.showCertificationModal = true;
-  }
-
-  openEditCertificationModal(certId: string): void {
-    this.modalTitle = 'Edit Certification';
-    this.adminService.getCertification(certId).subscribe(
-      data => {
-        if (data.success) {
-          const cert = data.certification;
-          this.certificationForm = {
-            id: cert._id,
-            name: cert.name,
-            code: cert.code,
-            provider: cert.provider,
-            description: cert.description || '',
-            passingScore: cert.passingScore,
-            timeLimit: cert.timeLimit,
-            domains: cert.domains && cert.domains.length > 0 ? 
-              cert.domains.map((domain: Domain) => ({ name: domain.name, weight: domain.weight })) : 
-              [{ name: '' }]
-          };
-          this.showCertificationModal = true;
-        }
-      },
-      error => console.error('Error loading certification:', error)
-    );
   }
 
   closeCertificationModal(): void {
@@ -126,60 +99,35 @@ export class AdminCertificationsComponent implements OnInit {
     }
   }
 
-  saveCertification(): void {
-    if (!this.validateForm()) {
-      return;
-    }
-
-    const requestData = {
-      id: this.certificationForm.id || undefined,
-      name: this.certificationForm.name,
-      code: this.certificationForm.code,
-      provider: this.certificationForm.provider,
-      description: this.certificationForm.description,
-      passingScore: parseInt(this.certificationForm.passingScore),
-      timeLimit: parseInt(this.certificationForm.timeLimit),
-      domains: this.certificationForm.domains.filter((domain: Domain) => domain.name.trim() !== '')
-    };
-
-    const isUpdate = !!requestData.id;
-    
-    this.adminService.saveCertification(requestData, isUpdate).subscribe(
-      data => {
-        if (data.success) {
+  saveCertification(formData: CertificationFormData): void {
+    if (formData.id) {
+      // Update existing certification
+      this.adminService.updateCertification(formData.id, formData).subscribe({
+        next: () => {
           this.closeCertificationModal();
           this.loadCertifications();
+          this.notificationService.showSuccess('certification updated successfully')
+        },
+        error: (error: any) => {
+          this.notificationService.showError(error.error.message)
         }
-      },
-      error => console.error(`Error ${isUpdate ? 'updating' : 'creating'} certification:`, error)
-    );
+      });
+    } else {
+      // Create new certification
+      this.adminService.createCertification(formData).subscribe({
+        next: () => {
+          this.closeCertificationModal();
+          this.loadCertifications();
+          this.notificationService.showSuccess('certification created successfully')
+        },
+        error: (error: any) => {
+          this.notificationService.showError(error.error.message)
+        }
+      });
+    }
   }
 
-  validateForm(): boolean {
-    // Basic validation
-    if (!this.certificationForm.name || !this.certificationForm.code || !this.certificationForm.provider) {
-      return false;
-    }
-    
-    // Check passing score
-    if (isNaN(this.certificationForm.passingScore) || 
-        this.certificationForm.passingScore < 1 || 
-        this.certificationForm.passingScore > 100) {
-      return false;
-    }
-    
-    // Check time limit
-    if (isNaN(this.certificationForm.timeLimit) || this.certificationForm.timeLimit < 1) {
-      return false;
-    }
-    
-    // Check domains
-    const validDomains = this.certificationForm.domains.filter(
-      (domain: Domain) => domain.name.trim() !== ''
-    );
-    
-    return validDomains.length > 0;
-  }
+
 
   viewDomains(certId: string): void {
     this.domainsLoading = true;
@@ -194,7 +142,7 @@ export class AdminCertificationsComponent implements OnInit {
       },
       error => {
         this.domainsLoading = false;
-        console.error('Error loading domains:', error);
+        this.notificationService.showError(error.error.message)
       }
     );
   }
@@ -204,10 +152,6 @@ export class AdminCertificationsComponent implements OnInit {
     this.selectedCertification = null;
   }
 
-  editDomains(certId: string): void {
-    this.closeDomainsModal();
-    this.openEditCertificationModal(certId);
-  }
 
   toggleCertificationStatus(cert: Certification): void {
     const newStatus = !cert.active;
@@ -217,13 +161,57 @@ export class AdminCertificationsComponent implements OnInit {
       return;
     }
     
-    this.adminService.updateCertificationStatus(cert._id, newStatus).subscribe(
-      data => {
+    this.adminService.updateCertificationStatus(cert._id, newStatus).subscribe({
+     next: data => {
         if (data.success) {
           cert.active = newStatus;
         }
+        this.notificationService.showSuccess('update successful')
       },
-      error => console.error(`Error ${action}ing certification:`, error)
-    );
+      error: error => this.notificationService.showError(error.error.message)
+  });
+  }
+
+
+  openEditCertificationModal(certId: string): void {
+    const cert = this.certifications.find(c => c._id === certId);
+    if (cert) {
+      this.certificationForm = {
+        id: cert._id,
+        name: cert.name,
+        code: cert.code,
+        provider: cert.provider,
+        description: cert.description,
+        passingScore: cert.passingScore,
+        timeLimit: cert.timeLimit,
+        domains: cert.domains && cert.domains.length > 0 ? 
+        cert.domains.map((domain: Domain) => ({ name: domain.name, weight: domain.weight })) : 
+        [{ name: '' }]
+    };
+        active: cert.active
+      };
+      this.showCertificationModal = true;
+  }
+
+
+
+
+  editDomains(certId: string): void {
+    this.closeDomainsModal();
+    this.openEditCertificationModal(certId);
+  }
+
+
+  private getEmptyCertification(): CertificationFormData {
+    return {
+      name: '',
+      code: '',
+      provider: '',
+      description: '',
+      passingScore: 70,
+      timeLimit: 180,
+      domains: [{ name: '', weight: 0 }],
+      active: true
+    };
   }
 }
