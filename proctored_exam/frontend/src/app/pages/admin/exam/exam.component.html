@@ -1,1 +1,237 @@
-<p>exam works!</p>
+<!-- admin-exams.component.html -->
+<div class="admin-exams">
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Exam Management</h1>
+        <div class="flex space-x-4">
+          <div class="relative">
+            <select [(ngModel)]="selectedCertification" (change)="onCertificationFilterChange()" class="form-select">
+              <option value="">All Certifications</option>
+              <option *ngFor="let cert of certifications" [value]="cert._id">
+                {{ cert.name }} ({{ cert.code }})
+              </option>
+            </select>
+          </div>
+          <button (click)="openAddExamModal()" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i> Create Exam
+          </button>
+        </div>
+      </div>
+  
+      <!-- Exams Table -->
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="th-cell">Exam Name</th>
+                  <th class="th-cell">Certification</th>
+                  <th class="th-cell">Questions</th>
+                  <th class="th-cell">Time Limit</th>
+                  <th class="th-cell">Settings</th>
+                  <th class="th-cell">Status</th>
+                  <th class="th-cell">Created</th>
+                  <th class="th-cell">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngIf="exams && exams.length > 0; else noExams">
+                  <tr *ngFor="let exam of exams" class="hover:bg-gray-50 border-b border-gray-200">
+                    <td class="td-cell font-medium text-gray-900">
+                      {{ exam.name }}
+                    </td>
+                    <td class="td-cell">
+                      <span class="cert-badge">{{ exam.certificationId.code }}</span>
+                    </td>
+                    <td class="td-cell">
+                      <div class="flex items-center">
+                        <span class="text-gray-900">{{ exam.questionCount }}</span>
+                      </div>
+                    </td>
+                    <td class="td-cell">
+                      {{ exam.timeLimit ? (exam.timeLimit + ' min') : 'Default' }}
+                    </td>
+                    <td class="td-cell">
+                      <div class="flex flex-col space-y-1">
+                        <div class="flex items-center text-xs">
+                          <span class="mr-2">Randomize:</span>
+                          <span [ngClass]="exam.randomize ? 'text-green-600' : 'text-gray-500'">
+                            <i class="fas" [ngClass]="exam.randomize ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                          </span>
+                        </div>
+                        <div class="flex items-center text-xs">
+                          <span class="mr-2">Show Results:</span>
+                          <span [ngClass]="exam.showResults ? 'text-green-600' : 'text-gray-500'">
+                            <i class="fas" [ngClass]="exam.showResults ? 'fa-check-circle' : 'fa-times-circle'"></i>
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="td-cell">
+                      <span class="status-badge" [ngClass]="exam.active ? 'active' : 'inactive'">
+                        {{ exam.active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </td>
+                    <td class="td-cell text-gray-500">
+                      <div>{{ exam.createdAt | date }}</div>
+                      <div class="text-xs">by {{ exam.createdBy ? exam.createdBy.username : 'System' }}</div>
+                    </td>
+                    <td class="td-cell">
+                      <div class="flex space-x-2">
+                        <button class="action-btn" (click)="openEditExamModal(exam._id)" title="Edit">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn" (click)="duplicateExam(exam._id)" title="Duplicate">
+                          <i class="fas fa-copy"></i>
+                        </button>
+                        <button class="action-btn" (click)="toggleExamStatus(exam)" 
+                                title="{{ exam.active ? 'Deactivate' : 'Activate' }}">
+                          <i class="fas" [ngClass]="exam.active ? 'fa-toggle-on text-green-600' : 'fa-toggle-off text-gray-400'"></i>
+                        </button>
+                        <button class="action-btn" (click)="confirmDeleteExam(exam._id)" title="Delete">
+                          <i class="fas fa-trash text-red-500"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+                <ng-template #noExams>
+                  <tr>
+                    <td colspan="8" class="py-8 text-center text-gray-500">
+                      {{ selectedCertification ? 'No exams found for this certification' : 'No exams found' }}
+                    </td>
+                  </tr>
+                </ng-template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Exam Modal -->
+  <div *ngIf="showExamModal" class="modal">
+    <div class="modal-overlay" (click)="closeExamModal()"></div>
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>{{ modalTitle }}</h2>
+        <button (click)="closeExamModal()" class="modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #examFormEl="ngForm">
+          <input type="hidden" [(ngModel)]="examForm.id" name="id">
+          
+          <div class="form-group">
+            <label for="exam-certification" class="form-label required">Certification</label>
+            <select id="exam-certification" [(ngModel)]="examForm.certificationId" name="certificationId" 
+                   (change)="loadCertificationInfo()" class="form-select" required>
+              <option value="">Select Certification</option>
+              <option *ngFor="let cert of certifications" [value]="cert._id">
+                {{ cert.name }} ({{ cert.code }})
+              </option>
+            </select>
+            <div *ngIf="certificationInfo.timeLimit || certificationInfo.questionCount" class="mt-2 text-xs text-gray-500">
+              <span *ngIf="certificationInfo.timeLimit">Time Limit: {{ certificationInfo.timeLimit }} minutes</span>
+              <span *ngIf="certificationInfo.questionCount"> | Available Questions: {{ certificationInfo.questionCount }}</span>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="exam-name" class="form-label required">Exam Name</label>
+            <input type="text" id="exam-name" [(ngModel)]="examForm.name" name="name" 
+                  class="form-input" placeholder="e.g. Practice Exam 1" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="exam-description" class="form-label">Description</label>
+            <textarea id="exam-description" [(ngModel)]="examForm.description" name="description" 
+                     class="form-textarea" rows="3" placeholder="Describe the exam content or purpose..."></textarea>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="exam-question-count" class="form-label required">Number of Questions</label>
+              <input type="number" id="exam-question-count" [(ngModel)]="examForm.questionCount" 
+                    (input)="validateQuestionCount()" name="questionCount" class="form-input" 
+                    min="1" max="500" required>
+              <div *ngIf="questionCountWarning" class="mt-1 text-xs text-red-500">
+                Warning: Not enough questions available in this certification.
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="exam-time-limit" class="form-label">Time Limit (minutes)</label>
+              <input type="number" id="exam-time-limit" [(ngModel)]="examForm.timeLimit" name="timeLimit" 
+                    class="form-input" min="1" max="1440" placeholder="Leave empty to use certification default">
+              <div class="mt-1 text-xs text-gray-500">
+                Leave empty to use certification's default time limit
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div class="form-group">
+              <div class="flex items-center">
+                <input type="checkbox" id="exam-randomize" [(ngModel)]="examForm.randomize" name="randomize" class="form-checkbox">
+                <label for="exam-randomize" class="ml-2 text-sm text-gray-700">
+                  Randomize question order
+                </label>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <div class="flex items-center">
+                <input type="checkbox" id="exam-show-results" [(ngModel)]="examForm.showResults" name="showResults" class="form-checkbox">
+                <label for="exam-show-results" class="ml-2 text-sm text-gray-700">
+                  Show results immediately after submission
+                </label>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button (click)="saveExam()" class="btn btn-primary">Save Exam</button>
+        <button (click)="closeExamModal()" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Delete Confirmation Modal -->
+  <div *ngIf="showDeleteModal" class="modal">
+    <div class="modal-overlay" (click)="closeDeleteModal()"></div>
+    <div class="modal-container max-w-md">
+      <div class="modal-header">
+        <h2>Confirm Deletion</h2>
+        <button (click)="closeDeleteModal()" class="modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-gray-700">Are you sure you want to delete this exam? This action cannot be undone.</p>
+        
+        <div *ngIf="deleteWarning" class="mt-4">
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                  This exam has existing attempts. It will be deactivated instead of permanently deleted.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button (click)="deleteExam()" class="btn btn-danger">Delete Exam</button>
+        <button (click)="closeDeleteModal()" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>

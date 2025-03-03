@@ -3,6 +3,7 @@ import { Component, OnInit, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { NgIfContext } from '@angular/common';
+import { NotificationService } from 'src/app/services/notification.service';
 
 interface Certification {
   _id: string;
@@ -44,6 +45,12 @@ interface Pagination {
   totalPages: number;
 }
 
+interface Domain {
+  _id: string;
+  name: string;
+  weight: number;
+}
+
 @Component({
   selector: 'app-admin-questions',
   templateUrl: './question.component.html',
@@ -55,7 +62,7 @@ throw new Error('Method not implemented.');
 }
   questions: Question[] = [];
   certifications: Certification[] = [];
-  domains: string[] = [];
+  domains: Domain[] = [];
   filters: QuestionFilters = {};
   pagination: Pagination = {
     page: 1,
@@ -91,7 +98,8 @@ throw new Error('Method not implemented.');
   constructor(
     private adminService: AdminService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private notificationService: NotificationService
   ) { }
 
   ngOnInit(): void {
@@ -112,31 +120,32 @@ throw new Error('Method not implemented.');
   }
 
   loadQuestions(): void {
-    this.adminService.getQuestions(this.filters, this.pagination).subscribe(
-      data => {
-        this.questions = data.questions;
-        this.pagination = data.pagination;
+    this.adminService.getQuestions(this.filters, this.pagination).subscribe({
+     next: (data) => {
+        this.questions = data.data.questions;
+        this.pagination = data.data.pagination;
       },
-      error => console.error('Error loading questions:', error)
-    );
+     error: (error) => this.notificationService.showError(error)
+  });
   }
 
   loadCertifications(): void {
-    this.adminService.getCertifications().subscribe(
-      data => {
-        this.certifications = data.certifications;
+    this.adminService.getCertifications().subscribe({
+      next: (data) => {
+        this.certifications = data.data.certifications;
       },
-      error => console.error('Error loading certifications:', error)
-    );
+      error: (error) => this.notificationService.showError(error)
+  });
   }
 
   loadDomains(): void {
-    this.adminService.getAllDomains().subscribe(
-      data => {
-        this.domains = data.domains;
+    this.adminService.getAllDomains().subscribe({
+     next: (data) => {
+      console.log(data.data)
+        this.domains = data.data;
       },
-      error => console.error('Error loading domains:', error)
-    );
+     error: (error) => this.notificationService.showError(error)
+  });
   }
 
   applyFilters(filters: QuestionFilters): void {
@@ -173,6 +182,9 @@ throw new Error('Method not implemented.');
     this.addOption();
     this.addOption();
   }
+roundNumber(value: number): number {
+  return Math.round(value);
+}
 
   openEditQuestionModal(questionId: string): void {
     this.modalTitle = 'Edit Question';
@@ -227,14 +239,15 @@ throw new Error('Method not implemented.');
   loadDomainsForCertification(certId: string): void {
     if (!certId) return;
     
-    this.adminService.getCertificationDomains(certId).subscribe(
-      data => {
+    this.adminService.getCertificationDomains(certId).subscribe({
+     next: (data) => {
         if (data.success) {
-          this.domains = data.domains.map((d: any) => d.name);
+          // this.domains = data.domains.map((d: any) => d.name);
+          this.domains = data.data;
         }
       },
-      error => console.error('Error loading domains:', error)
-    );
+     error: (error) => this.notificationService.showError(error)
+  });
   }
 
   addOption(id?: string, text?: string): void {

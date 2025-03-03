@@ -9,6 +9,10 @@ import { SelectExamComponent } from './pages/exam/select-exam/select-exam.compon
 import { ExamInstructionsComponent } from './pages/exam/exam-instructions/exam-instructions.component';
 import { ExamResultsComponent } from './pages/exam/exam-results/exam-results.component';
 import { DashboardComponent } from './pages/admin/dashboard/dashboard.component';
+import { AdminCertificationsComponent } from './pages/admin/certification/certification.component';
+import { AdminExamsComponent } from './pages/admin/exam/exam.component';
+import { AdminQuestionsComponent } from './pages/admin/question/question.component';
+import { AdminUsersComponent } from './pages/admin/users/users.component';
 
 const routes: Routes = [
   
@@ -28,7 +32,11 @@ const routes: Routes = [
   path: 'admin',
   component: AdminLayoutComponent,
   children: [
-    { path: 'dashboard', component: DashboardComponent }
+    { path: 'dashboard', component: DashboardComponent },
+    { path: 'certifications', component: AdminCertificationsComponent },
+    { path: 'exams', component: AdminExamsComponent },
+    { path: 'users', component: AdminUsersComponent },
+    { path: 'questions', component: AdminQuestionsComponent }
   ]
 },
   { path: '', redirectTo: '/auth/login', pathMatch: 'full' }, 

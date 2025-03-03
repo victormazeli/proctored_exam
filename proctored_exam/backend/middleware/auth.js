@@ -1,3 +1,5 @@
+const passport = require('passport');
+
 /**
  * middleware/auth.js - Authentication and Role-based Access Middleware
  */
@@ -59,10 +61,26 @@ const isAuthenticated = (req, res, next) => {
       });
     };
   };
+
+ const authenticateJwt = (req, res, next) => {
+    passport.authenticate('jwt', { session: false }, (err, user, info) => {
+      if (err) return next(err);
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: info.message || 'Invalid token'
+        });
+      }
+      
+      req.user = user;
+      next();
+    })(req, res, next);
+  };
   
   module.exports = {
     isAuthenticated,
     isNotAuthenticated,
     isAdmin,
-    hasRole
+    hasRole,
+    authenticateJwt
   };

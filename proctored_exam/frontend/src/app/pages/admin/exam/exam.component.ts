@@ -71,18 +71,18 @@ export class AdminExamsComponent implements OnInit {
 
   loadExams(): void {
     const params = this.selectedCertification ? { certification: this.selectedCertification } : {};
-    this.adminService.getExams(params).subscribe(
-      data => {
+    this.adminService.getExams(params).subscribe({
+      next: data => {
         this.exams = data.exams;
       },
-      error => console.error('Error loading exams:', error)
-    );
+      error: error => console.error('Error loading exams:', error)
+  });
   }
 
   loadCertifications(): void {
     this.adminService.getCertifications().subscribe(
       data => {
-        this.certifications = data.certifications;
+        this.certifications = data.data.certifications;
       },
       error => console.error('Error loading certifications:', error)
     );
@@ -188,7 +188,7 @@ export class AdminExamsComponent implements OnInit {
     this.adminService.getCertification(certId).subscribe(
       data => {
         if (data.success) {
-          const cert = data.certification;
+          const cert = data.data.certification;
           this.certificationInfo.timeLimit = cert.timeLimit;
           
           this.adminService.getQuestionCount(certId).subscribe(

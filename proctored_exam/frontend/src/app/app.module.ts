@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -8,7 +9,7 @@ import { HeaderComponent } from './components/layouts/header/header.component';
 import { FooterComponent } from './components/layouts/footer/footer.component';
 import { LoginComponent } from './pages/auth/login/login.component';
 import { RegisterComponent } from './pages/auth/register/register.component';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ExamComponent } from './pages/exam/exam/exam.component';
 import { SelectExamComponent } from './pages/exam/select-exam/select-exam.component';
 import { TimeWarningModalComponent } from './components/shared/time-warning-modal/time-warning-modal.component';
@@ -23,10 +24,20 @@ import { ExamInstructionsComponent } from './pages/exam/exam-instructions/exam-i
 import { ExamResultsComponent } from './pages/exam/exam-results/exam-results.component';
 import { AuthComponent } from './pages/admin/auth/auth.component';
 import { DashboardComponent } from './pages/admin/dashboard/dashboard.component';
-import { UsersComponent } from './pages/admin/users/users.component';
+import { AdminUsersComponent } from './pages/admin/users/users.component';
 import { AdminCertificationsComponent  } from './pages/admin/certification/certification.component';
 import { CommonModule } from '@angular/common';
 import { AdminQuestionsComponent } from './pages/admin/question/question.component';
+import { AdminExamsComponent } from './pages/admin/exam/exam.component';
+import { UserAvatarComponent } from './components/shared/user-avatar/user-avatar.component';
+import { NotificationComponent } from './components/shared/notification/notification.component';
+import { UploadDialogComponent } from './pages/admin/modals/upload-dialog/upload-dialog.component';
+import { CreateUserDialogComponent } from './pages/admin/users/create-user-dialog/create-user-dialog.component';
+import { UserDetailsDialogComponent } from './pages/admin/users/user-details-dialog/user-details-dialog.component';
+import { RoleChangeDialogComponent } from './pages/admin/users/role-change-dialog/role-change-dialog.component';
+import { CreateCertificationModalComponent } from './pages/admin/certification/create-certification-modal/create-certification-modal.component';
+import { DomainModalComponent } from './pages/admin/certification/domain-modal/domain-modal.component';
+
 
 
 // Configure Socket.io with your backend URL
@@ -58,17 +69,28 @@ const config: SocketIoConfig = {
     ExamResultsComponent,
     AuthComponent,
     DashboardComponent,
-    UsersComponent,
     AdminCertificationsComponent,
-    AdminQuestionsComponent
+    AdminQuestionsComponent,
+    AdminExamsComponent,
+    AdminUsersComponent,
+    UserAvatarComponent,
+    NotificationComponent,
+    UploadDialogComponent,
+    CreateUserDialogComponent,
+    UserDetailsDialogComponent,
+    RoleChangeDialogComponent,
+    CreateCertificationModalComponent,
+    DomainModalComponent
   ],
   imports: [
+    BrowserAnimationsModule,
     BrowserModule,
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     AppRoutingModule,
     HttpClientModule,
-    SocketIoModule.forRoot(config)
+    SocketIoModule.forRoot(config),
   ],
   providers: [
     ExamService,

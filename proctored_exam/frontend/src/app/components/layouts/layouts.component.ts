@@ -181,7 +181,7 @@ export class AdminLayoutComponent {
     { 
       icon: 'fas fa-tachometer-alt', 
       label: 'Dashboard', 
-      route: '/admin' 
+      route: '/admin/dashboard' 
     },
     {
       section: 'Content Management'
@@ -208,11 +208,6 @@ export class AdminLayoutComponent {
       icon: 'fas fa-users', 
       label: 'Users', 
       route: '/admin/users' 
-    },
-    { 
-      icon: 'fas fa-user-shield', 
-      label: 'Administrators', 
-      route: '/admin/administrators' 
     },
     {
       section: 'Analytics'
