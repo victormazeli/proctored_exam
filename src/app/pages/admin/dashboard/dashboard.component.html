@@ -1,0 +1,185 @@
+<!-- admin-dashboard.component.html -->
+<div class="admin-dashboard">
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+        <div class="flex space-x-4">
+          <a routerLink="/admin/questions" class="btn btn-primary">
+            Manage Questions
+          </a>
+          <a routerLink="/admin/exams" class="btn btn-secondary">
+            Manage Exams
+          </a>
+        </div>
+      </div>
+  
+      <!-- Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div *ngFor="let card of statCards" class="stat-card">
+          <div class="flex items-center">
+            <div class="stat-icon" [ngClass]="card.iconClass">
+              <i [class]="card.icon"></i>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-sm font-medium text-gray-500">{{ card.title }}</h3>
+              <p class="text-2xl font-bold text-gray-800">
+                {{ card.value }}
+                <span *ngIf="card.title === 'Total Attempts'" class="text-sm font-normal text-gray-500">
+                  ({{ stats.lastWeekAttempts }} this week)
+                </span>
+              </p>
+            </div>
+          </div>
+          <div class="mt-2 text-sm text-gray-600">
+            <a [routerLink]="card.link" class="flex items-center" [ngClass]="card.hoverClass">
+              <span>{{ card.linkText }}</span>
+              <i class="fas fa-chevron-right ml-1 text-xs"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+  
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Recent Activity -->
+        <div class="lg:col-span-2">
+          <div class="card">
+            <div class="card-header">
+              <h2 class="card-title">Recent Exam Attempts</h2>
+            </div>
+            <div class="card-body p-0">
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr>
+                      <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        User
+                      </th>
+                      <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Exam
+                      </th>
+                      <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date
+                      </th>
+                      <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Score
+                      </th>
+                      <th class="px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Result
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <ng-container *ngIf="recentAttempts && recentAttempts.length > 0; else noAttempts">
+                      <tr *ngFor="let attempt of recentAttempts" class="hover:bg-gray-50">
+                        <td class="px-4 py-3 whitespace-nowrap">
+                          <div class="flex items-center">
+                            <div class="text-sm font-medium text-gray-900">
+                              {{ attempt.userId.username }}
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">{{ attempt.examId.name }}</div>
+                          <div class="text-xs text-gray-500">{{ attempt.certificationId.name }}</div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                          <div class="text-sm text-gray-900">
+                            {{ attempt.endTime | date:'shortDate' }}
+                          </div>
+                          <div class="text-xs text-gray-500">
+                            {{ attempt.endTime | date:'shortTime' }}
+                          </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                          <div class="text-sm font-medium text-gray-900">
+                            {{ attempt.score.overall.toFixed(1) }}%
+                          </div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap">
+                          <span *ngIf="attempt.passed" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            PASS
+                          </span>
+                          <span *ngIf="!attempt.passed" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            FAIL
+                          </span>
+                        </td>
+                      </tr>
+                    </ng-container>
+                    <ng-template #noAttempts>
+                      <tr>
+                        <td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">
+                          No recent attempts found
+                        </td>
+                      </tr>
+                    </ng-template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card-footer">
+              <a routerLink="/admin/analytics" class="text-sm text-blue-600 hover:text-blue-800">
+                View all attempts →
+              </a>
+            </div>
+          </div>
+        </div>
+  
+        <!-- Certification Pass Rates -->
+        <div class="lg:col-span-1">
+          <div class="card h-full">
+            <div class="card-header">
+              <h2 class="card-title">Certification Pass Rates</h2>
+            </div>
+            <div class="card-body">
+              <ng-container *ngIf="certPassRates && certPassRates.length > 0; else noCertData">
+                <div class="space-y-4">
+                  <div *ngFor="let cert of certPassRates">
+                    <div class="flex justify-between mb-1">
+                      <span class="text-sm font-medium text-gray-700">{{ cert.name }}</span>
+                      <span class="text-sm font-medium text-gray-700">{{ cert.passRate.toFixed(1) }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                      <div class="bg-blue-600 h-2 rounded-full" [style.width.%]="cert.passRate"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-xs text-gray-500">
+                      <span>Total Attempts: {{ cert.totalAttempts }}</span>
+                      <span>Passes: {{ cert.passCount }}</span>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-template #noCertData>
+                <div class="flex items-center justify-center h-full">
+                  <p class="text-gray-500 text-sm">No certification data available</p>
+                </div>
+              </ng-template>
+            </div>
+            <div class="card-footer">
+              <a routerLink="/admin/analytics/certifications" class="text-sm text-blue-600 hover:text-blue-800">
+                View detailed analytics →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Quick Actions -->
+      <div class="mt-8">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <a *ngFor="let action of quickActions" 
+             [routerLink]="action.link" 
+             class="quick-action-card" 
+             [ngClass]="[action.bgClass, action.hoverClass]">
+            <div class="quick-action-icon" [ngClass]="[action.iconBgClass, action.iconTextClass]">
+              <i [class]="action.icon"></i>
+            </div>
+            <div class="quick-action-text">
+              <h3 class="font-medium text-gray-900">{{ action.title }}</h3>
+              <p class="text-sm text-gray-500">{{ action.description }}</p>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>

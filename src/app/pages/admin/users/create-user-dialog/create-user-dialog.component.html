@@ -1,0 +1,126 @@
+<!-- admin/users/components/create-user-dialog/create-user-dialog.component.html -->
+<div class="dialog-container">
+    <div class="dialog-header">
+      <h2>Create New User</h2>
+      <button (click)="cancel()" class="dialog-close">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="dialog-body">
+      <form [formGroup]="createUserForm" (ngSubmit)="submitForm()">
+        <div class="grid grid-cols-1 gap-4">
+          <!-- Basic Information Section -->
+          <div class="border-b pb-4 mb-4">
+            <h3 class="text-lg font-medium mb-3">Basic Information</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Username -->
+              <div class="form-group">
+                <label for="username" class="form-label block mb-1">Username <span class="text-red-500">*</span></label>
+                <input type="text" id="username" formControlName="username" 
+                      class="form-input w-full rounded-md border-gray-300"
+                      [ngClass]="{'border-red-500': createUserForm.get('username')?.invalid && createUserForm.get('username')?.touched}">
+                <div *ngIf="createUserForm.get('username')?.invalid && createUserForm.get('username')?.touched" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="createUserForm.get('username')?.errors?.['required']">Username is required</span>
+                  <span *ngIf="createUserForm.get('username')?.errors?.['minlength']">Username must be at least 3 characters</span>
+                </div>
+              </div>
+              
+              <!-- Email -->
+              <div class="form-group">
+                <label for="email" class="form-label block mb-1">Email <span class="text-red-500">*</span></label>
+                <input type="email" id="email" formControlName="email" 
+                      class="form-input w-full rounded-md border-gray-300"
+                      [ngClass]="{'border-red-500': createUserForm.get('email')?.invalid && createUserForm.get('email')?.touched}">
+                <div *ngIf="createUserForm.get('email')?.invalid && createUserForm.get('email')?.touched" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="createUserForm.get('email')?.errors?.['required']">Email is required</span>
+                  <span *ngIf="createUserForm.get('email')?.errors?.['email']">Please enter a valid email</span>
+                </div>
+              </div>
+            </div>
+  
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <!-- Password -->
+              <div class="form-group">
+                <label for="password" class="form-label block mb-1">Password <span class="text-red-500">*</span></label>
+                <div class="relative">
+                  <input [type]="showPassword ? 'text' : 'password'" id="password" formControlName="password" 
+                        class="form-input w-full rounded-md border-gray-300 pr-10"
+                        [ngClass]="{'border-red-500': createUserForm.get('password')?.invalid && createUserForm.get('password')?.touched}">
+                  <button type="button" class="absolute inset-y-0 right-0 pr-3 flex items-center" (click)="togglePasswordVisibility()">
+                    <i class="fas" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                  </button>
+                </div>
+                <div *ngIf="createUserForm.get('password')?.invalid && createUserForm.get('password')?.touched" class="text-red-500 text-xs mt-1">
+                  <span *ngIf="createUserForm.get('password')?.errors?.['required']">Password is required</span>
+                  <span *ngIf="createUserForm.get('password')?.errors?.['minlength']">Password must be at least 8 characters</span>
+                </div>
+              </div>
+              
+              <!-- Full Name (Optional) -->
+              <div class="form-group">
+                <label for="fullName" class="form-label block mb-1">Full Name</label>
+                <input type="text" id="fullName" formControlName="fullName" class="form-input w-full rounded-md border-gray-300">
+              </div>
+            </div>
+          </div>
+          
+          <!-- Permissions Section -->
+          <div>
+            <h3 class="text-lg font-medium mb-3">Permissions</h3>
+            
+            <!-- Role Selection -->
+            <div class="form-group mb-4">
+              <label class="form-label block mb-2">User Role <span class="text-red-500">*</span></label>
+              <div class="flex space-x-4">
+                <div class="flex items-center">
+                  <input type="radio" id="roleUser" formControlName="role" value="user" class="form-radio h-4 w-4 text-blue-600">
+                  <label for="roleUser" class="ml-2 text-gray-700">Regular User</label>
+                </div>
+                <div class="flex items-center">
+                  <input type="radio" id="roleAdmin" formControlName="role" value="admin" class="form-radio h-4 w-4 text-blue-600">
+                  <label for="roleAdmin" class="ml-2 text-gray-700">Administrator</label>
+                </div>
+              </div>
+              <div class="text-xs text-gray-500 mt-1">
+                Admins have full access to all system functions.
+              </div>
+            </div>
+            
+            <!-- Proctor Settings -->
+            <div class="form-group">
+              <div class="flex items-center mb-2">
+                <input type="checkbox" id="proctorEnabled" formControlName="proctorEnabled" class="form-checkbox h-4 w-4 text-blue-600">
+                <label for="proctorEnabled" class="ml-2 text-gray-700">Enable Proctoring</label>
+              </div>
+              <div class="text-xs text-gray-500">
+                If enabled, this user will be required to use proctoring during exams.
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mt-6">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-info-circle text-blue-400"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-blue-700">
+                A temporary password will be automatically generated and sent to the user's email if you leave the password field empty.
+              </p>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    
+    <div class="dialog-footer">
+      <button type="button" (click)="submitForm()" class="btn btn-primary" [disabled]="createUserForm.invalid || isSubmitting">
+        <i *ngIf="isSubmitting" class="fas fa-spinner fa-spin mr-2"></i>
+        Create User
+      </button>
+      <button type="button" (click)="cancel()" class="btn btn-outline">Cancel</button>
+    </div>
+  </div>
