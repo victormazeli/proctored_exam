@@ -1,5 +1,7 @@
 // exam.interfaces.ts
 
+import { Certification } from "./certification.interface";
+
 export interface Question {
     id: string;
     text: string;
@@ -69,3 +71,32 @@ export interface Question {
     };
   }
 
+  export interface Exam {
+    _id: string;
+    name: string;
+    certificationId: Certification;
+    description: string;
+    questionCount: number;
+    timeLimit: number;
+    randomize: boolean;
+    showResults: boolean;
+    active: boolean;
+    createdBy: string;
+    createdAt: Date;
+    updatedAt: Date;
+  }
+
+
+
+  interface ExamInstructions {
+    examName: string;
+    code: string;
+    timeLimit: number;
+    questionsCount: number;
+    passingScore: number;
+    instructions: string[];
+    domains: {
+      name: string;
+      percentage: number;
+    }[];
+  }

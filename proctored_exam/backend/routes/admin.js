@@ -26,7 +26,12 @@ router.put('/exams/:id', adminController.updateExam);
 router.delete('/exams/:id', adminController.deleteExam);
 router.get('/questions', adminController.getQuestions);
 router.get('/certifications/:certificationId/domains', adminController.getCertificationDomains);
-router.post('/questions/import', adminController.importQuestions);
+router.post(
+    '/questions/import',
+    adminController.uploadQuestionsCsv,
+    adminController.handleMulterError,
+    adminController.importQuestions
+  );
 router.post('/questions', adminController.saveQuestion);
 router.get('/questions/:id', adminController.getQuestion)
 router.delete('/questions/:id', adminController.deleteQuestion);

@@ -79,9 +79,9 @@ export class AdminService {
       });
     }
     return this.http.get<any>(`${this.apiUrl}/certifications`, {params: httpParams})
-      .pipe(
-        catchError(this.handleError('getCertifications', { certifications: [], certStats: {} }))
-      );
+      // .pipe(
+      //   catchError(this.handleError('getCertifications', { certifications: [], certStats: {} }))
+      // );
   }
 
   getCertification(id: string): Observable<any> {
@@ -127,9 +127,6 @@ export class AdminService {
     }
     
     return this.http.get<any>(`${this.apiUrl}/exams`, { params: httpParams })
-      .pipe(
-        catchError(this.handleError('getExams', { exams: [] }))
-      );
   }
 
   getExam(id: string): Observable<any> {
@@ -228,20 +225,20 @@ export class AdminService {
   }
 
   importQuestions(data: any): Observable<any> {
-    const formData = new FormData();
+    // const formData = new FormData();
     
-    if (data.file) {
-      formData.append('file', data.file);
-    }
+    // if (data.file) {
+    //   formData.append('file', data.file);
+    // }
     
-    if (data.certificationId) {
-      formData.append('certificationId', data.certificationId);
-    }
+    // if (data.certificationId) {
+    //   formData.append('certificationId', data.certificationId);
+    // }
     
-    return this.http.post<any>(`${this.apiUrl}/questions/import`, formData)
-      .pipe(
-        catchError(this.handleError('importQuestions', { success: false }))
-      );
+    return this.http.post<any>(`${this.apiUrl}/questions/import`, data)
+      // .pipe(
+      //   catchError(this.handleError('importQuestions', { success: false }))
+      // );
   }
 
   exportQuestions(params: any): void {

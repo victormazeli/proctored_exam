@@ -1,7 +1,7 @@
 // exam.service.ts
 
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { 
@@ -11,12 +11,13 @@ import {
   ProctorConfig,
   ProctorEvent 
 } from '../models/exam.interface';
+import { environment } from 'src/environment/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ExamService {
-  private readonly API_URL = '/api/exams';
+  private readonly API_URL = `${environment.api}/api/exams`
   private examDataSubject = new BehaviorSubject<ExamData | null>(null);
   public examData$ = this.examDataSubject.asObservable();
 
@@ -87,5 +88,36 @@ export class ExamService {
    */
   getCurrentExamData(): ExamData | null {
     return this.examDataSubject.value;
+  }
+
+    getCertifications(params?: any): Observable<any> {
+      let httpParams = new HttpParams();
+      
+      if (params) {
+        Object.keys(params).forEach(key => {
+          if (params[key]) {
+            httpParams = httpParams.append(key, params[key]);
+          }
+        });
+      }
+      return this.http.get<any>(`${this.API_URL}/certifications`, {params: httpParams})
+    }
+
+  getExams(params?: any): Observable<any> {
+    let httpParams = new HttpParams();
+      if (params) {
+        Object.keys(params).forEach(key => {
+            if (params[key]) {
+              httpParams = httpParams.append(key, params[key]);
+            }
+        });
+      }
+        
+        return this.http.get<any>(`${this.API_URL}`, { params: httpParams })
+  }
+
+
+  getExamById(id: any): Observable<any> {
+    return this.http.get<any>(`${this.API_URL}`, { params: {examId: id} })
   }
 }

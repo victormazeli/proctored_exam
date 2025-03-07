@@ -39,7 +39,7 @@ const ExamSchema = new mongoose.Schema({
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true,
+    // required: true,
     ref: 'User'
   },
   createdAt: {

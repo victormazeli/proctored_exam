@@ -14,8 +14,8 @@
         </button>
         <div class="h-8 w-px bg-gray-200"></div>
         <div>
-          <h1 class="text-xl font-semibold text-gray-900">{{ examData.examName }}</h1>
-          <p class="text-sm text-gray-500">{{ examData.code }}</p>
+          <h1 class="text-xl font-semibold text-gray-900">{{ examData.name }}</h1>
+          <p class="text-sm text-gray-500">{{ examData.certificationId.code }}</p>
         </div>
       </div>
 
@@ -27,11 +27,11 @@
         </div>
         <div class="text-center border-x border-blue-100">
           <div class="text-sm text-blue-600 font-medium">Questions</div>
-          <div class="mt-1 text-2xl font-semibold text-blue-700">{{ examData.questionsCount }}</div>
+          <div class="mt-1 text-2xl font-semibold text-blue-700">{{ examData.questionCount }}</div>
         </div>
         <div class="text-center">
           <div class="text-sm text-blue-600 font-medium">To Pass</div>
-          <div class="mt-1 text-2xl font-semibold text-blue-700">{{ examData.passingScore }}<span class="text-sm ml-1">%</span></div>
+          <div class="mt-1 text-2xl font-semibold text-blue-700">{{ examData.certificationId.passingScore }}<span class="text-sm ml-1">%</span></div>
         </div>
       </div>
     </div>
@@ -50,7 +50,7 @@
               </svg>
               <div>
                 <div class="font-medium text-gray-900">Time Management</div>
-                <p class="text-sm text-gray-600">You'll see a timer throughout the exam. Make sure to allocate approximately {{ (examData.timeLimit / examData.questionsCount).toFixed(1) }} minutes per question.</p>
+                <p class="text-sm text-gray-600">You'll see a timer throughout the exam. Make sure to allocate approximately {{ (examData.timeLimit / examData.questionCount).toFixed(1) }} minutes per question.</p>
               </div>
             </div>
 

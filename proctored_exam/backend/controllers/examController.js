@@ -106,6 +106,84 @@ exports.examInstructions = async (req, res) => {
   }
 };
 
+
+exports.getCertifications = async (req, res) => {
+  try {
+
+    const certifications = await Certification.find();
+    
+    return res.status(200).json({
+      success: true,
+      data: certifications
+    })
+  } catch (err) {
+    console.error('Error loading certifications:', err);
+    return res.stats(500).json({
+      success: false,
+      message: 'Error loading certifications'
+    })
+  }
+};
+
+
+exports.getExams = async (req, res) => {
+  try {
+    const certificationId = req.query.certification || null;
+    const examId = req.query.examId || null;
+    
+    const query = {};
+    if (certificationId) {
+      query.certificationId = certificationId;
+    }
+
+    if (examId) {
+      query._id = examId;
+    }
+    
+    const exams = await Exam.find(query)
+      .populate('certificationId', 'name code passingScore')
+      .populate('createdBy', 'username')
+      .sort({ createdAt: -1 });
+    
+
+    return res.status(200).json({
+      success: true,
+      data: exams,
+    });
+
+  } catch (err) {
+    console.error('Error loading exams:', err);
+     return res.status(500).json({ 
+      success: false, 
+      message: 'Error loading exams' 
+    });
+  }
+};
+
+exports.getExam = async (req, res) => {
+  try {
+    const examId = req.query.examId || null;
+    
+    const exam = await Exam.findOne({_id: examId})
+      .populate('certificationId', 'name code passingScore')
+      .populate('createdBy', 'username')
+      .sort({ createdAt: -1 });
+    
+
+    return res.status(200).json({
+      success: true,
+      data: exam,
+    });
+
+  } catch (err) {
+    console.error('Error loading exams:', err);
+     return res.status(500).json({ 
+      success: false, 
+      message: 'Error loading exams' 
+    });
+  }
+};
+
 /**
  * Start a new exam attempt
  */
