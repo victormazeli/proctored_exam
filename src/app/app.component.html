@@ -1,0 +1,21 @@
+<ng-container *ngIf="connectionState$ | async as state">
+    <app-connection-status
+      [visible]="state.visible"
+      [statusType]="state.statusType"
+      [message]="state.message"
+      [dismissible]="state.dismissible"
+      (dismiss)="onDismissConnectionStatus()">
+    </app-connection-status>
+  </ng-container>
+  
+  <!-- Your other app content -->
+<app-notification></app-notification>
+<router-outlet></router-outlet>
+<ng-container *ngIf="saveState$ | async as state">
+    <app-save-status
+      [visible]="state.visible"
+      [statusType]="state.statusType"
+      [message]="state.message"
+      [position]="state.position">
+    </app-save-status>
+  </ng-container>

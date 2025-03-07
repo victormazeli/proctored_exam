@@ -1,0 +1,300 @@
+<!-- exam-session.component.html -->
+<div class="min-h-screen bg-gray-50">
+  <!-- Top Bar -->
+  <div class="fixed top-0 left-0 right-0 bg-white shadow-sm z-40">
+    <div class="max-w-7xl mx-auto px-4 py-2">
+      <!-- Progress Bar at the very top -->
+      <div class="h-1 w-full bg-gray-200 rounded-full mb-3">
+        <div class="h-full bg-blue-500 rounded-full transition-all duration-300"
+             [style.width.%]="(currentQuestionIndex + 1) / examData.questions.length * 100">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <!-- Left: Exam Info -->
+        <div class="flex items-center gap-6">
+          <h1 class="text-lg font-medium text-gray-800">{{ examData.metadata.examName }}</h1>
+          
+          <!-- Question Counter with Circle Progress -->
+          <div class="flex items-center gap-3 px-4 py-1.5 bg-gray-50 rounded-full">
+            <div class="flex items-center gap-1 text-sm">
+              <span class="font-semibold text-blue-600">{{ currentQuestionIndex + 1 }}</span>
+              <span class="text-gray-500">/</span>
+              <span class="text-gray-500">{{ examData.questions.length }}</span>
+            </div>
+            <div class="h-4 w-px bg-gray-200"></div>
+            <div class="text-sm">
+              <span class="text-green-600 font-medium">{{ getAnsweredCount() }}</span>
+              <span class="text-gray-500"> answered</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Timer and Controls -->
+        <div class="flex items-center gap-4">
+          <!-- Timer -->
+          <div class="flex items-center gap-2 px-4 py-2 rounded-lg" 
+               [class.bg-red-50]="timeWarningShown"
+               [class.text-red-700]="timeWarningShown"
+               [class.bg-blue-50]="!timeWarningShown"
+               [class.text-blue-700]="!timeWarningShown">
+            <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"/>
+            </svg>
+            <span class="font-medium tracking-wider">{{ timerDisplay }}</span>
+          </div>
+
+          <!-- Question Navigator Toggle -->
+          <button 
+            (click)="toggleQuestionNavigator()"
+            class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/>
+            </svg>
+            <span class="font-medium">Review</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="pt-24 pb-24 px-4">
+    <div class="max-w-3xl mx-auto">
+      <!-- Question Card -->
+      <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+        <!-- Question Header -->
+        <div class="p-6 border-b border-gray-100">
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50 text-blue-600 font-semibold">
+              {{ currentQuestionIndex + 1 }}
+            </div>
+            <h2 class="flex-grow text-lg text-gray-900 leading-relaxed" [innerHTML]="currentQuestion?.text"></h2>
+          </div>
+        </div>
+        
+        <!-- Options -->
+        <div class="p-6">
+          <div class="space-y-3">
+            <label *ngFor="let option of currentQuestion?.options; let i = index" 
+                   class="block">
+              <div class="group relative flex items-start p-4 border rounded-xl cursor-pointer transition-all duration-200"
+                   [class.border-blue-500]="isOptionSelected(option)"
+                   [class.bg-blue-50]="isOptionSelected(option)"
+                   [class.hover:border-gray-300]="!isOptionSelected(option)"
+                   [class.hover:bg-gray-50]="!isOptionSelected(option)">
+                <div class="flex items-center h-5">
+                  <input 
+                    type="radio" 
+                    [name]="'question-' + currentQuestionIndex"
+                    [value]="option.id"
+                    [checked]="isOptionSelected(option)"
+                    (change)="selectOption(option)"
+                    class="h-4 w-4 text-blue-600 border-gray-300 focus:ring-blue-500">
+                </div>
+                <div class="ml-4 flex-grow">
+                  <span class="text-gray-700 group-hover:text-gray-900" [innerHTML]="option.text"></span>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Controls -->
+      <div class="mt-6 flex items-center justify-between">
+        <!-- Previous Button -->
+        <button 
+          (click)="goToPreviousQuestion()"
+          [disabled]="currentQuestionIndex === 0"
+          class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          [class.cursor-not-allowed]="currentQuestionIndex === 0"
+          [class.opacity-50]="currentQuestionIndex === 0"
+          [class.hover:bg-gray-100]="currentQuestionIndex !== 0">
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"/>
+          </svg>
+          Previous
+        </button>
+
+        <!-- Flag Button -->
+        <button 
+          (click)="toggleFlagQuestion()"
+          class="flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+          [class.text-yellow-700]="isCurrentQuestionFlagged()"
+          [class.bg-yellow-50]="isCurrentQuestionFlagged()"
+          [class.hover:bg-yellow-100]="isCurrentQuestionFlagged()"
+          [class.text-gray-600]="!isCurrentQuestionFlagged()"
+          [class.hover:bg-gray-100]="!isCurrentQuestionFlagged()">
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M3 6a3 3 0 013-3h10a1 1 0 01.8 1.6L14.25 8l2.55 3.4A1 1 0 0116 13H6a1 1 0 00-1 1v3a1 1 0 11-2 0V6z"/>
+          </svg>
+          {{ isCurrentQuestionFlagged() ? 'Remove Flag' : 'Flag Question' }}
+        </button>
+
+        <!-- Next/Submit Button -->
+        <button 
+          *ngIf="!isLastQuestion()"
+          (click)="goToNextQuestion()"
+          class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+          Next
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"/>
+          </svg>
+        </button>
+
+        <button 
+          *ngIf="isLastQuestion()"
+          (click)="showSubmitConfirmation()"
+          class="flex items-center gap-2 px-6 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
+          Submit Exam
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Answer Status -->
+      <div class="mt-6 px-4 py-3 bg-gray-50 rounded-lg text-sm text-gray-600">
+        {{ isQuestionAnswered(currentQuestionIndex) ? 'You have answered this question' : 'This question is not answered yet' }}
+        {{ isCurrentQuestionFlagged() ? ' and it is flagged for review' : '' }}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Question Navigator Sidebar -->
+  <div 
+    *ngIf="isNavigatorVisible" 
+    class="fixed inset-0 bg-black/50 z-40"
+    (click)="toggleQuestionNavigator()">
+  </div>
+
+  <aside 
+    class="fixed inset-y-0 right-0 w-80 bg-white shadow-xl transform transition-transform duration-300 z-50"
+    [class.translate-x-0]="isNavigatorVisible"
+    [class.translate-x-full]="!isNavigatorVisible">
+    <div class="h-full flex flex-col">
+      <!-- Navigator Header -->
+      <div class="p-4 bg-gray-800 text-white">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-medium">Question Navigator</h3>
+          <button (click)="toggleQuestionNavigator()" class="text-gray-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-2 gap-3 text-center">
+          <div class="bg-gray-700/50 rounded-lg p-2">
+            <div class="text-2xl font-semibold">{{ getAnsweredCount() }}</div>
+            <div class="text-xs text-gray-300">Answered</div>
+          </div>
+          <div class="bg-gray-700/50 rounded-lg p-2">
+            <div class="text-2xl font-semibold">{{ getFlaggedCount() }}</div>
+            <div class="text-xs text-gray-300">Flagged</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Question Grid -->
+      <div class="flex-1 overflow-y-auto p-4">
+        <div class="grid grid-cols-5 gap-2">
+          <button *ngFor="let question of filteredQuestions; let i = index"
+                  (click)="loadQuestion(i)"
+                  class="aspect-square flex items-center justify-center text-sm font-medium rounded-lg border-2 transition-all"
+                  [class.bg-blue-100]="i === currentQuestionIndex"
+                  [class.border-blue-500]="i === currentQuestionIndex"
+                  [class.bg-green-50]="isQuestionAnswered(i) && i !== currentQuestionIndex"
+                  [class.border-green-500]="isQuestionAnswered(i) && i !== currentQuestionIndex"
+                  [class.bg-yellow-50]="isQuestionFlagged(i) && i !== currentQuestionIndex"
+                  [class.border-yellow-500]="isQuestionFlagged(i) && i !== currentQuestionIndex"
+                  [class.border-gray-200]="!isQuestionAnswered(i) && !isQuestionFlagged(i) && i !== currentQuestionIndex"
+                  [class.hover:border-gray-300]="i !== currentQuestionIndex">
+            {{ i + 1 }}
+          </button>
+        </div>
+
+        <!-- Legend -->
+        <div class="mt-6 space-y-2">
+          <div class="flex items-center gap-2 p-2 rounded bg-green-50/50">
+            <div class="w-4 h-4 bg-green-50 border-2 border-green-500 rounded"></div>
+            <span class="text-sm text-gray-600">Answered</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 rounded bg-yellow-50/50">
+            <div class="w-4 h-4 bg-yellow-50 border-2 border-yellow-500 rounded"></div>
+            <span class="text-sm text-gray-600">Flagged for Review</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 rounded bg-gray-50">
+            <div class="w-4 h-4 bg-white border-2 border-gray-300 rounded"></div>
+            <span class="text-sm text-gray-600">Not Answered</span>
+          </div>
+          <div class="flex items-center gap-2 p-2 rounded bg-blue-50/50">
+            <div class="w-4 h-4 bg-blue-100 border-2 border-blue-500 rounded"></div>
+            <span class="text-sm text-gray-600">Current Question</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Section -->
+      <div class="p-4 border-t border-gray-200 bg-gray-50">
+        <div class="mb-4 text-sm text-gray-600">
+          Make sure to review all questions before submitting.
+        </div>
+        <button 
+          (click)="showSubmitConfirmation()"
+          class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"/>
+          </svg>
+          Submit Exam
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Proctor Webcam -->
+  <div *ngIf="examData.proctorEnabled" 
+       class="fixed top-20 right-4 z-30">
+    <div class="bg-black rounded-lg shadow-lg overflow-hidden">
+      <div class="relative">
+        <video #proctorWebcam autoplay playsinline muted class="w-48 h-36 object-cover"></video>
+        <div class="absolute bottom-2 right-2 flex items-center gap-2 px-2 py-1 bg-black/70 rounded-full text-xs font-medium text-white">
+          <div class="w-2 h-2 rounded-full"
+               [class.bg-green-500]="proctorStatusClass === 'active'"
+               [class.bg-red-500]="proctorStatusClass !== 'active'">
+          </div>
+          <span>Proctoring {{ proctorStatusClass === 'active' ? 'Active' : 'Inactive' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modals -->
+<app-submit-modal
+  *ngIf="isSubmitModalVisible"
+  [unansweredCount]="getUnansweredCount()"
+  (confirm)="submitExam()"
+  (cancel)="closeSubmitConfirmation()">
+</app-submit-modal>
+
+<app-time-warning-modal
+  *ngIf="isTimeWarningModalVisible"
+  [timeRemaining]="timeWarningMinutes" 
+  (acknowledge)="closeTimeWarningModal()">
+</app-time-warning-modal>
+
+<app-proctor-warning-modal
+  *ngIf="isProctorWarningModalVisible"
+  [message]="proctorWarningMessage"
+  (acknowledge)="closeProctorWarning()">  
+</app-proctor-warning-modal>
+
+<app-webcam-permission-modal
+  *ngIf="isWebcamPermissionModalVisible"
+  (retry)="initializeProctoring()">
+</app-webcam-permission-modal>
