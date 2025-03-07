@@ -5,7 +5,7 @@ const Exam = require('../models/exam');
 const Certification = require('../models/certification');
 const Attempt = require('../models/attempt');
 // const analyticsService = require('../services/analyticsService');
-const { validationResult } = require('express-validator');
+const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const Papa = require('papaparse');
@@ -504,17 +504,14 @@ exports.createCertification = async (req, res) => {
 exports.updateCertification = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, passingScore, timeLimit, domains, active } = req.body;
-    
-    const certification = await Certification.findById(id);
-    if (!certification) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Certification not found' 
-      });
+    let { name, description, passingScore, timeLimit, domains, active } = req.body;
+
+    // Filter out domains with empty names
+    if (domains && Array.isArray(domains)) {
+      domains = domains.filter(domain => domain.name && domain.name.trim() !== '');
     }
     
-    // Parse domains if provided
+    // Parse domains if provided as a string
     let parsedDomains;
     if (domains) {
       try {
@@ -529,16 +526,31 @@ exports.updateCertification = async (req, res) => {
       }
     }
     
-    // Update fields
-    if (name) certification.name = name;
-    if (description) certification.description = description;
-    if (passingScore) certification.passingScore = parseInt(passingScore);
-    if (timeLimit) certification.timeLimit = parseInt(timeLimit);
-    if (parsedDomains) certification.domains = parsedDomains;
-    if (active !== undefined) certification.active = active;
+    // Build update object with only the fields that were provided
+    const updateFields = {};
+    if (name !== undefined) updateFields.name = name;
+    if (description !== undefined) updateFields.description = description;
+    if (passingScore !== undefined) updateFields.passingScore = parseInt(passingScore);
+    if (timeLimit !== undefined) updateFields.timeLimit = parseInt(timeLimit);
+    if (parsedDomains) updateFields.domains = parsedDomains;
+    if (active !== undefined) updateFields.active = active;
     
-    certification.updatedAt = new Date();
-    await certification.save();
+    // Add updatedAt timestamp
+    updateFields.updatedAt = new Date();
+    
+    // Use findByIdAndUpdate for a single database operation
+    const certification = await Certification.findByIdAndUpdate(
+      id,
+      updateFields,
+      { new: true, runValidators: true } // Return updated doc and run schema validators
+    );
+    
+    if (!certification) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Certification not found' 
+      });
+    }
     
     return res.json({ 
       success: true, 
@@ -638,7 +650,7 @@ exports.createExam = async (req, res) => {
       randomize: randomize === 'true',
       showResults: showResults === 'true',
       active: true,
-      createdBy: req.user._id
+      // createdBy: req.user._id
     });
     
     await newExam.save();
@@ -850,9 +862,55 @@ exports.getCertificationDomains = async (req, res) => {
   }
 };
 
-/**
- * Import questions from CSV
- */
+
+// Configure multer storage
+const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, 'uploads/');  // Make sure this directory exists
+  },
+  filename: function(req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+// File filter function
+const fileFilter = (req, file, cb) => {
+  // Accept only CSV files
+  if (file.mimetype === 'text/csv') {
+    cb(null, true);
+  } else {
+    cb(new Error('Only CSV files are allowed'), false);
+  }
+};
+
+// Initialize multer upload
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 1024 * 1024 * 5 // 5MB max file size
+  }
+});
+
+// Middleware handler for file upload
+exports.uploadQuestionsCsv = upload.single('file');
+
+// Handle validation errors from multer
+exports.handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      message: `File upload error: ${err.message}`
+    });
+  } else if (err) {
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+  next();
+};
+
 exports.importQuestions = async (req, res) => {
   try {
     if (!req.file) {
@@ -982,7 +1040,7 @@ exports.importQuestions = async (req, res) => {
             difficultyRating: 0
           },
           active: true,
-          createdBy: req.user._id,
+          // createdBy: req.user._id,
           createdAt: new Date(),
           updatedAt: new Date()
         });

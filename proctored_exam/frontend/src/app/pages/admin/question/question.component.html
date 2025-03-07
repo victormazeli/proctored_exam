@@ -344,110 +344,305 @@
     </div>
   </div>
   
-  <!-- Question Stats Modal -->
-  <div *ngIf="showStatsModal" class="modal">
-    <div class="modal-overlay" (click)="closeStatsModal()"></div>
+  
+  <!-- Import Questions Modal -->
+  <div *ngIf="showImportModal" class="modal">
+    <div class="modal-overlay" (click)="closeImportModal()"></div>
     <div class="modal-container">
       <div class="modal-header">
-        <h2>Question Analytics</h2>
-        <button (click)="closeStatsModal()" class="modal-close">
+        <h2>Import Questions</h2>
+        <button (click)="closeImportModal()" class="modal-close">
           <i class="fas fa-times"></i>
         </button>
       </div>
       <div class="modal-body">
-        <div *ngIf="!questionStats" class="text-center py-8">
-          <div class="spinner"></div>
-          <p class="mt-2 text-gray-600">Loading analytics...</p>
+        <div class="mb-4">
+          <p class="text-gray-700 mb-2">Upload a CSV file with questions to import into the system.</p>
+          <p class="text-sm text-gray-500 mb-4">
+            Make sure your CSV file follows the required format. 
+            <a href="javascript:void(0)" (click)="downloadTemplate()" class="text-blue-600 hover:underline">Download template</a>
+          </p>
         </div>
-        
-        <ng-container *ngIf="questionStats">
-          < *ngIf="questionStats.stats.totalAttempts > 0; else noStats">
-            <div class="question-preview-box mb-4">
-              <div class="font-medium text-gray-800">{{ questionStats.question.text }}</div>
+  
+        <form #importForm="ngForm">
+          <div class="form-group mb-4">
+            <label for="import-certification" class="form-label required">Certification</label>
+            <select id="import-certification" [(ngModel)]="importData.certificationId" 
+                   name="certificationId" class="form-select" required>
+              <option value="">Select Certification</option>
+              <option *ngFor="let cert of certifications" [value]="cert._id">
+                {{ cert.name }} ({{ cert.code }})
+              </option>
+            </select>
+            <div *ngIf="importForm.submitted && !importData.certificationId" class="text-red-500 text-sm mt-1">
+              Please select a certification
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 class="text-sm font-semibold text-gray-700 mb-3">Performance Summary</h3>
-                <div class="stats-card">
-                  <div class="stats-grid">
-                    <div class="stat-item">
-                      <div class="stat-label">Total Attempts</div>
-                      <div class="stat-value">{{ questionStats.stats.totalAttempts }}</div>
+          </div>
+          
+          <div class="form-group mb-4">
+            <label for="import-file" class="form-label required">CSV File</label>
+            <div class="file-upload-container">
+              <div class="file-upload-box" 
+                   [ngClass]="{'has-file': importData.file}" 
+                   (click)="fileInput.click()">
+                <input type="file" 
+                       #fileInput
+                       (change)="onFileSelected($event)"
+                       accept=".csv"
+                       class="hidden">
+                <div *ngIf="!importData.file" class="file-upload-placeholder">
+                  <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                  <p>Click to select a CSV file or drag and drop here</p>
+                </div>
+                <div *ngIf="importData.file" class="file-upload-info">
+                  <i class="fas fa-file-csv text-2xl text-green-600 mr-2"></i>
+                  <span>{{ importData.file.name }}</span>
+                  <button type="button" (click)="removeFile($event)" class="ml-2 text-red-500">
+                    <i class="fas fa-times-circle"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="importError" class="text-red-500 text-sm mt-1">
+              {{ importError }}
+            </div>
+          </div>
+        </form>
+  
+        <div *ngIf="importResult" class="import-result mt-4">
+          <div [ngClass]="{'success-box': importResult.success, 'error-box': !importResult.success}">
+            <div class="font-medium">{{ importResult.message }}</div>
+            <div *ngIf="importResult.success" class="text-sm mt-2">
+              Imported {{ importResult.imported }} of {{ importResult.total }} questions
+            </div>
+            <div *ngIf="importResult.errors && importResult.errors.length > 0" class="mt-2">
+              <div class="font-medium mb-1">Errors:</div>
+              <ul class="text-sm list-disc pl-5">
+                <li *ngFor="let error of importResult.errors.slice(0, 5)" class="mb-1">
+                  {{ error }}
+                </li>
+                <li *ngIf="importResult.errors.length > 5" class="italic">
+                  ...and {{ importResult.errors.length - 5 }} more errors
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button (click)="importQuestions()" 
+                [disabled]="!importData.certificationId || !importData.file || isImporting" 
+                class="btn btn-primary">
+          <i class="fas fa-spinner fa-spin mr-2" *ngIf="isImporting"></i>
+          {{ isImporting ? 'Importing...' : 'Import Questions' }}
+        </button>
+        <button (click)="closeImportModal()" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Export Questions Modal -->
+  <div *ngIf="showExportModal" class="modal">
+    <div class="modal-overlay" (click)="closeExportModal()"></div>
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>Export Questions</h2>
+        <button (click)="closeExportModal()" class="modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-4">
+          <p class="text-gray-700">Export questions to a CSV file. You can filter which questions to export.</p>
+        </div>
+  
+        <form #exportForm="ngForm">
+          <div class="form-group mb-4">
+            <label for="export-certification" class="form-label">Certification</label>
+            <select id="export-certification" [(ngModel)]="exportData.certificationId" 
+                   name="certificationId" class="form-select" (change)="loadDomainsForExport()">
+              <option value="">All Certifications</option>
+              <option *ngFor="let cert of certifications" [value]="cert._id">
+                {{ cert.name }} ({{ cert.code }})
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group mb-4">
+            <label for="export-domain" class="form-label">Domain</label>
+            <select id="export-domain" [(ngModel)]="exportData.domain" 
+                   name="domain" class="form-select" [disabled]="!exportData.certificationId">
+              <option value="">All Domains</option>
+              <option *ngFor="let domain of exportDomains" [value]="domain.name">
+                {{ domain.name }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group mb-4">
+            <label class="form-label">Status</label>
+            <div class="flex space-x-4 mt-2">
+              <label class="inline-flex items-center">
+                <input type="radio" [(ngModel)]="exportData.status" name="status" value="all" class="form-radio">
+                <span class="ml-2">All</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" [(ngModel)]="exportData.status" name="status" value="active" class="form-radio">
+                <span class="ml-2">Active only</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" [(ngModel)]="exportData.status" name="status" value="inactive" class="form-radio">
+                <span class="ml-2">Inactive only</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="form-group mb-4">
+            <label for="export-format" class="form-label">Export Format</label>
+            <select id="export-format" [(ngModel)]="exportData.format" name="format" class="form-select">
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Include in Export</label>
+            <div class="grid grid-cols-2 gap-3 mt-2">
+              <label class="inline-flex items-center">
+                <input type="checkbox" [(ngModel)]="exportData.includeAnalytics" name="includeAnalytics" class="form-checkbox">
+                <span class="ml-2">Analytics data</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" [(ngModel)]="exportData.includeCreationData" name="includeCreationData" class="form-checkbox">
+                <span class="ml-2">Creation data</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="checkbox" [(ngModel)]="exportData.includeMetadata" name="includeMetadata" class="form-checkbox">
+                <span class="ml-2">Metadata</span>
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button (click)="exportQuestions()" 
+                [disabled]="isExporting" 
+                class="btn btn-primary">
+          <i class="fas fa-spinner fa-spin mr-2" *ngIf="isExporting"></i>
+          {{ isExporting ? 'Exporting...' : 'Export Questions' }}
+        </button>
+        <button (click)="closeExportModal()" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+    <!-- Question Stats Modal -->
+    <div *ngIf="showStatsModal" class="modal">
+      <div class="modal-overlay" (click)="closeStatsModal()"></div>
+      <div class="modal-container">
+        <div class="modal-header">
+          <h2>Question Analytics</h2>
+          <button (click)="closeStatsModal()" class="modal-close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="!questionStats" class="text-center py-8">
+            <div class="spinner"></div>
+            <p class="mt-2 text-gray-600">Loading analytics...</p>
+          </div>
+          
+          <ng-container *ngIf="questionStats">
+            < *ngIf="questionStats.stats.totalAttempts > 0; else noStats">
+              <div class="question-preview-box mb-4">
+                <div class="font-medium text-gray-800">{{ questionStats.question.text }}</div>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 class="text-sm font-semibold text-gray-700 mb-3">Performance Summary</h3>
+                  <div class="stats-card">
+                    <div class="stats-grid">
+                      <div class="stat-item">
+                        <div class="stat-label">Total Attempts</div>
+                        <div class="stat-value">{{ questionStats.stats.totalAttempts }}</div>
+                      </div>
+                      <div class="stat-item">
+                        <div class="stat-label">Correct Percentage</div>
+                        <div class="stat-value">{{ questionStats.stats.correctPercentage.toFixed(1) }}%</div>
+                      </div>
+                      <div class="stat-item">
+                        <div class="stat-label">Avg. Time Spent</div>
+                        <div class="stat-value">{{ roundNumber(questionStats.stats.avgTimeSpent) }}s</div>
+                      </div>
+                      <div class="stat-item">
+                        <div class="stat-label">Difficulty Rating</div>
+                        <div class="stat-value difficulty-display">
+                          <span *ngFor="let i of [1,2,3,4,5]" class="difficulty-dot" 
+                                [ngClass]="{'active': i <= (questionStats.stats.avgDifficulty || questionStats.question.difficulty)}"></span>
+                        </div>
+                      </div>
                     </div>
-                    <div class="stat-item">
-                      <div class="stat-label">Correct Percentage</div>
-                      <div class="stat-value">{{ questionStats.stats.correctPercentage.toFixed(1) }}%</div>
-                    </div>
-                    <div class="stat-item">
-                      <div class="stat-label">Avg. Time Spent</div>
-                      <div class="stat-value">{{ roundNumber(questionStats.stats.avgTimeSpent) }}s</div>
-                    </div>
-                    <div class="stat-item">
-                      <div class="stat-label">Difficulty Rating</div>
-                      <div class="stat-value difficulty-display">
-                        <span *ngFor="let i of [1,2,3,4,5]" class="difficulty-dot" 
-                              [ngClass]="{'active': i <= (questionStats.stats.avgDifficulty || questionStats.question.difficulty)}"></span>
+                  </div>
+                  
+                  <h3 class="text-sm font-semibold text-gray-700 mt-4 mb-3">Time Distribution</h3>
+                  <div class="time-distribution-chart h-40">
+                    <div class="flex flex-col h-full justify-end">
+                      <div class="flex items-end justify-around h-32 mb-2">
+                        <div class="w-1/4 mx-1">
+                          <div class="bg-blue-400 rounded-t" 
+                               [style.height.%]="questionStats.stats.timeDistribution.under30s / questionStats.stats.totalAttempts * 100"></div>
+                        </div>
+                        <div class="w-1/4 mx-1">
+                          <div class="bg-blue-500 rounded-t" 
+                               [style.height.%]="questionStats.stats.timeDistribution.under60s / questionStats.stats.totalAttempts * 100"></div>
+                        </div>
+                        <div class="w-1/4 mx-1">
+                          <div class="bg-blue-600 rounded-t" 
+                               [style.height.%]="questionStats.stats.timeDistribution.under120s / questionStats.stats.totalAttempts * 100"></div>
+                        </div>
+                        <div class="w-1/4 mx-1">
+                          <div class="bg-blue-700 rounded-t" 
+                               [style.height.%]="questionStats.stats.timeDistribution.over120s / questionStats.stats.totalAttempts * 100"></div>
+                        </div>
+                      </div>
+                      <div class="flex justify-around text-xs text-gray-600">
+                        <div class="text-center">0-30s</div>
+                        <div class="text-center">30-60s</div>
+                        <div class="text-center">1-2m</div>
+                        <div class="text-center">2m+</div>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <h3 class="text-sm font-semibold text-gray-700 mt-4 mb-3">Time Distribution</h3>
-                <div class="time-distribution-chart h-40">
-                  <div class="flex flex-col h-full justify-end">
-                    <div class="flex items-end justify-around h-32 mb-2">
-                      <div class="w-1/4 mx-1">
-                        <div class="bg-blue-400 rounded-t" 
-                             [style.height.%]="questionStats.stats.timeDistribution.under30s / questionStats.stats.totalAttempts * 100"></div>
+                <div>
+                  <h3 class="text-sm font-semibold text-gray-700 mb-3">Answer Distribution</h3>
+                  <div class="space-y-3">
+                    <div *ngFor="let option of questionStats.stats.optionDistribution" class="option-stat">
+                      <div class="flex justify-between mb-1">
+                        <span class="text-sm font-medium text-gray-700">Option {{ option.id }}</span>
+                        <span class="text-sm text-gray-500">{{ option.count }} ({{ option.percentage.toFixed(1) }}%)</span>
                       </div>
-                      <div class="w-1/4 mx-1">
-                        <div class="bg-blue-500 rounded-t" 
-                             [style.height.%]="questionStats.stats.timeDistribution.under60s / questionStats.stats.totalAttempts * 100"></div>
+                      <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-blue-600 h-2.5 rounded-full" [style.width.%]="option.percentage"></div>
                       </div>
-                      <div class="w-1/4 mx-1">
-                        <div class="bg-blue-600 rounded-t" 
-                             [style.height.%]="questionStats.stats.timeDistribution.under120s / questionStats.stats.totalAttempts * 100"></div>
-                      </div>
-                      <div class="w-1/4 mx-1">
-                        <div class="bg-blue-700 rounded-t" 
-                             [style.height.%]="questionStats.stats.timeDistribution.over120s / questionStats.stats.totalAttempts * 100"></div>
-                      </div>
-                    </div>
-                    <div class="flex justify-around text-xs text-gray-600">
-                      <div class="text-center">0-30s</div>
-                      <div class="text-center">30-60s</div>
-                      <div class="text-center">1-2m</div>
-                      <div class="text-center">2m+</div>
+                      <div class="mt-1 mb-3 text-xs text-gray-600 truncate">{{ option.text }}</div>
                     </div>
                   </div>
                 </div>
               </div>
-              
-              <div>
-                <h3 class="text-sm font-semibold text-gray-700 mb-3">Answer Distribution</h3>
-                <div class="space-y-3">
-                  <div *ngFor="let option of questionStats.stats.optionDistribution" class="option-stat">
-                    <div class="flex justify-between mb-1">
-                      <span class="text-sm font-medium text-gray-700">Option {{ option.id }}</span>
-                      <span class="text-sm text-gray-500">{{ option.count }} ({{ option.percentage.toFixed(1) }}%)</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2.5">
-                      <div class="bg-blue-600 h-2.5 rounded-full" [style.width.%]="option.percentage"></div>
-                    </div>
-                    <div class="mt-1 mb-3 text-xs text-gray-600 truncate">{{ option.text }}</div>
-                  </div>
-                </div>
+          </ng-container>
+  
+          <ng-template #noStats>
+            <div class="text-center py-8">
+              <div class="text-gray-400 mb-4">
+                <i class="fas fa-chart-bar text-5xl"></i>
               </div>
+              <h3 class="text-lg font-medium text-gray-700 mb-2">No Analytics Available</h3>
+              <p class="text-gray-500">This question hasn't been used in any exams yet.</p>
             </div>
-        </ng-container>
-
-        <ng-template #noStats>
-          <div class="text-center py-8">
-            <div class="text-gray-400 mb-4">
-              <i class="fas fa-chart-bar text-5xl"></i>
-            </div>
-            <h3 class="text-lg font-medium text-gray-700 mb-2">No Analytics Available</h3>
-            <p class="text-gray-500">This question hasn't been used in any exams yet.</p>
-          </div>
-        </ng-template>
+          </ng-template>
+        </div>
+      

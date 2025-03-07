@@ -107,8 +107,8 @@ app.set('views', path.join(__dirname, 'views'));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api//exams', examRoutes);
-app.use('/api//admin/questions', questionRoutes);
+app.use('/api/exams', examRoutes);
+app.use('/api/admin/questions', questionRoutes);
 app.use('/api/admin', adminRoutes);
 // app.use('/analytics', analyticsRoutes);
 app.use('/proctor', proctorRoutes);

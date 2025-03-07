@@ -4,12 +4,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { NgIfContext } from '@angular/common';
 import { NotificationService } from 'src/app/services/notification.service';
+import { Certification } from 'src/app/models/certification.interface';
 
-interface Certification {
-  _id: string;
-  name: string;
-  code: string;
-}
 
 interface Question {
   _id: string;
@@ -50,6 +46,8 @@ interface Domain {
   name: string;
   weight: number;
 }
+
+
 
 @Component({
   selector: 'app-admin-questions',
@@ -94,6 +92,26 @@ throw new Error('Method not implemented.');
   questionStats: any = null;
   deleteWarning = false;
   noStats = '';
+
+
+  importData = {
+    certificationId: '',
+    file: null as File | null
+  };
+  importError: string | null = null;
+  isImporting: boolean = false;
+  importResult: any = null;
+  exportData = {
+    certificationId: '',
+    domain: '',
+    status: 'all',
+    format: 'csv',
+    includeAnalytics: false,
+    includeCreationData: false,
+    includeMetadata: false
+  };
+  exportDomains: any[] = [];
+  isExporting: boolean = false;
   
   constructor(
     private adminService: AdminService,
@@ -383,24 +401,21 @@ roundNumber(value: number): number {
     );
   }
 
-  openImportModal(): void {
-    this.showImportModal = true;
-  }
 
-  openExportModal(): void {
-    this.showExportModal = true;
-  }
 
   handleImport(data: any): void {
-    this.adminService.importQuestions(data).subscribe(
-      response => {
+    this.adminService.importQuestions(data).subscribe({
+     next: (response) => {
         if (response.success) {
           this.closeImportModal();
           this.loadQuestions();
         }
       },
-      error => console.error('Error importing questions:', error)
-    );
+     error: (error) => {
+      console.error('Error importing questions:', error)
+      this.notificationService.showError('Error importing questions')
+    }
+  });
   }
 
   handleExport(data: any): void {
@@ -434,4 +449,196 @@ roundNumber(value: number): number {
   closeExportModal(): void {
     this.showExportModal = false;
   }
+
+
+
+
+  ///////////
+
+
+
+// Modal Methods
+openImportModal(): void {
+  this.showImportModal = true;
+  console.log(this.showImportModal)
+  this.importData = {
+    certificationId: '',
+    file: null
+  };
+  this.importError = null;
+  this.importResult = null;
 }
+
+openExportModal(): void {
+  this.showExportModal = true;
+  this.exportData = {
+    certificationId: '',
+    domain: '',
+    status: 'all',
+    format: 'csv',
+    includeAnalytics: false,
+    includeCreationData: false,
+    includeMetadata: false
+  };
+}
+
+// File handlers
+onFileSelected(event: any): void {
+  const files = event.target.files;
+  if (files.length > 0) {
+    const file = files[0];
+    
+    // Validate file type
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+      this.importError = 'Please upload a valid CSV file';
+      this.importData.file = null;
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      this.importError = 'File size should not exceed 5MB';
+      this.importData.file = null;
+      return;
+    }
+    
+    this.importData.file = file;
+    this.importError = null;
+  }
+}
+
+removeFile(event: Event): void {
+  event.stopPropagation();
+  this.importData.file = null;
+}
+
+downloadTemplate(): void {
+  // Create a sample CSV template
+  const headers = 'text,domain,options,correctAnswers,explanation,difficulty,tags\n';
+  const sampleRow = '"Sample question text?","Domain Name","[{""id"":""A"",""text"":""Option A""},{""id"":""B"",""text"":""Option B""}]","[""A""]","Explanation for the correct answer",3,"[""tag1"",""tag2""]"';
+  
+  const csvContent = headers + sampleRow;
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  
+  // Create download link
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', 'question_import_template.csv');
+  link.style.visibility = 'hidden';
+  
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+importQuestions(): void {
+  if (!this.importData.certificationId || !this.importData.file) {
+    this.importError = 'Please select a certification and upload a CSV file';
+    return;
+  }
+  
+  this.isImporting = true;
+  this.importError = null;
+  this.importResult = null;
+  
+  // Create form data
+  const formData = new FormData();
+  formData.append('file', this.importData.file);
+  formData.append('certificationId', this.importData.certificationId);
+
+  console.log(formData)
+  
+  // Make API call to import questions
+  this.adminService.importQuestions(formData).subscribe({
+    next: (response) => {
+      this.isImporting = false;
+      this.importResult = response;
+      
+      // Refresh question list if import was successful
+      if (response.success) {
+        this.loadQuestions();
+      }
+    },
+    error: (error) => {
+      this.isImporting = false;
+      this.importError = error.error?.message || 'Failed to import questions';
+      this.importResult = {
+        success: false,
+        message: this.importError,
+        errors: error.error?.errors || []
+      };
+    }
+});
+}
+
+loadDomainsForExport(): void {
+  // Reset domains when certification changes
+  this.exportData.domain = '';
+  this.exportDomains = [];
+  
+  if (!this.exportData.certificationId) {
+    return;
+  }
+  
+  // Find the selected certification
+  const selectedCert = this.certifications.find(
+    cert => cert._id === this.exportData.certificationId
+  );
+  
+  if (selectedCert && selectedCert.domains) {
+    this.exportDomains = selectedCert.domains;
+  }
+}
+
+exportQuestions(): void {
+  this.isExporting = true;
+  
+  // Prepare export params
+  const params: any = {
+    format: this.exportData.format
+  };
+  
+  if (this.exportData.certificationId) {
+    params.certificationId = this.exportData.certificationId;
+  }
+  
+  if (this.exportData.domain) {
+    params.domain = this.exportData.domain;
+  }
+  
+  if (this.exportData.status !== 'all') {
+    params.active = this.exportData.status === 'active';
+  }
+  
+  if (this.exportData.includeAnalytics) {
+    params.includeAnalytics = true;
+  }
+  
+  if (this.exportData.includeCreationData) {
+    params.includeCreationData = true;
+  }
+  
+  if (this.exportData.includeMetadata) {
+    params.includeMetadata = true;
+  }
+  
+  this.adminService.exportQuestions(params);
+  this.isExporting = false;
+  this.closeExportModal();
+}
+}
+
+
+
+
+ 
+
+
+
+
+
+
+
+

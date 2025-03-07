@@ -4,7 +4,8 @@ const examController = require('../controllers/examController');
 
 const router = express.Router();
 
-router.get('/select', examController.selectCertification);
+router.get('', examController.getExams);
+router.get('/certifications', examController.getCertifications);
 router.get('/:certId/select', examController.selectExam);
 router.get('/:examId/instructions', examController.examInstructions);
 router.get('/:examId/start', examController.startExam);

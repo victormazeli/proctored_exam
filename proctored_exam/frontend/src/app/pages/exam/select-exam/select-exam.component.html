@@ -1,111 +1,184 @@
-<!-- select-exam.component.html -->
-<div class="container mx-auto px-4 py-8">
-  <!-- Header -->
-  <div class="text-center mb-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-2">Select Your Exam</h1>
-    <p class="text-gray-600">Choose an exam to start your certification practice</p>
-  </div>
-
-  <!-- Search Bar -->
-  <div class="flex justify-between items-center mb-6">
-    <div class="relative">
-      <input 
-        type="text"
-        [(ngModel)]="searchTerm"
-        (input)="onSearch()"
-        placeholder="Search exams..."
-        class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-3 top-2.5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-      </svg>
+<!-- Alternative with compact card view -->
+<div class="bg-white min-h-screen">
+  <div class="container mx-auto px-4 py-6">
+    <!-- Simple Header -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-bold text-gray-900">Practice Exams</h1>
+      <p class="text-gray-600">Select an exam to start practicing</p>
     </div>
-
-    <div class="flex items-center gap-2">
-      <span class="text-sm text-gray-600">Show:</span>
-      <select 
-        [(ngModel)]="itemsPerPage"
-        (change)="onItemsPerPageChange()"
-        class="border rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500">
-        <option [value]="6">6</option>
-        <option [value]="9">9</option>
-        <option [value]="12">12</option>
-      </select>
-    </div>
-  </div>
-
-  <!-- Certification Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 min-h-[600px]">
-    <div *ngFor="let cert of paginatedCertifications" 
-         class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-      <div class="p-6">
-        <div class="text-sm text-blue-600 font-medium mb-2">{{ cert.provider }}</div>
-        <h3 class="text-xl font-bold text-gray-900 mb-1">{{ cert.name }}</h3>
-        <div class="text-sm text-gray-500 mb-4">{{ cert.code }}</div>
-        
-        <div class="text-gray-600 text-sm mb-4">{{ cert.description }}</div>
-        
-        <div class="flex justify-between py-3 border-t border-gray-200 mb-4">
-          <div class="text-center flex-1">
-            <div class="text-xs text-gray-500 mb-1">Time</div>
-            <div class="text-sm font-semibold text-gray-800">{{ cert.timeLimit }} min</div>
-          </div>
-          <div class="text-center flex-1">
-            <div class="text-xs text-gray-500 mb-1">Questions</div>
-            <div class="text-sm font-semibold text-gray-800">{{ cert.questionsCount }}</div>
-          </div>
-          <div class="text-center flex-1">
-            <div class="text-xs text-gray-500 mb-1">Passing</div>
-            <div class="text-sm font-semibold text-gray-800">{{ cert.passingScore }}%</div>
-          </div>
+    
+    <!-- Compact Filters Bar -->
+    <div class="bg-gray-50 border rounded-lg p-4 mb-6">
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Certification Dropdown -->
+        <div class="w-full sm:w-auto">
+          <select 
+            [(ngModel)]="selectedCertificationId"
+            (change)="onCertificationChange()"
+            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option [value]="''">All Certifications</option>
+            <option *ngFor="let cert of certifications" [value]="cert._id">{{ cert.provider }} - {{ cert.name }}</option>
+          </select>
         </div>
-
-        <div class="text-center">
-          <button (click)="startExam(cert._id)"
-                  class="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200">
-            Start Practice
+        
+        <!-- Search Input -->
+        <div class="relative w-full sm:w-auto flex-grow">
+          <input 
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+            placeholder="Search exams..."
+            class="w-full border rounded px-3 py-2 pl-9 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 absolute left-2 top-2.5" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+          </svg>
+        </div>
+        
+        <!-- View Toggle -->
+        <div class="flex items-center gap-2">
+          <button class="p-1 rounded border bg-gray-100">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+            </svg>
+          </button>
+          <button class="p-1 rounded border">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Active Only Toggle -->
+        <div class="flex items-center">
+          <input type="checkbox" id="active-only" [(ngModel)]="showActiveOnly" (change)="applyFilters()" class="rounded text-blue-600">
+          <label for="active-only" class="ml-2 text-sm text-gray-600">Active only</label>
+        </div>
+        
+        <!-- Items Per Page -->
+        <div class="flex items-center ml-auto">
+          <span class="text-sm text-gray-600 mr-2">Show:</span>
+          <select 
+            [(ngModel)]="itemsPerPage"
+            (change)="onItemsPerPageChange()"
+            class="border rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+            <option [value]="6">6</option>
+            <option [value]="12">12</option>
+            <option [value]="24">24</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Selected Certification Info (Compact) -->
+    <div *ngIf="selectedCertification" class="bg-blue-50 border border-blue-100 rounded-lg p-3 mb-6 flex justify-between items-center">
+      <div>
+        <div class="text-sm text-blue-600 font-medium">{{ selectedCertification.provider }}</div>
+        <div class="font-medium">{{ selectedCertification.name }} ({{ selectedCertification.code }})</div>
+      </div>
+      <div class="flex gap-4">
+        <div class="text-sm">
+          <span class="text-gray-500">Passing Score:</span> 
+          <span class="font-medium">{{ selectedCertification.passingScore }}%</span>
+        </div>
+        <div class="text-sm">
+          <span class="text-gray-500">Domains:</span> 
+          <span class="font-medium">{{ selectedCertification.domains.length || 0 }}</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- No Results Message (Simple) -->
+    <div *ngIf="paginatedExams.length === 0" class="border rounded-lg p-6 text-center mb-6">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <h3 class="text-lg font-medium text-gray-700 mb-1">No exams found</h3>
+      <p class="text-gray-500">Try changing your search criteria or selecting a different certification.</p>
+    </div>
+    
+    <!-- Compact Card Design -->
+    <div *ngIf="paginatedExams.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div *ngFor="let exam of paginatedExams" 
+           class="border rounded-lg overflow-hidden hover:border-gray-300 transition-colors duration-200"
+           [class.opacity-75]="!exam.active">
+        <div class="p-4">
+          <!-- Header with title and status -->
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="font-medium text-gray-900">{{ exam.name }}</h3>
+            <span *ngIf="!exam.active" class="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">Inactive</span>
+          </div>
+          
+          <!-- Provider/Certification info -->
+          <div class="text-sm text-blue-600 mb-2">{{ getCertificationName(exam.certificationId._id) }}</div>
+          
+          <!-- Exam details in a compact layout -->
+          <div class="grid grid-cols-3 gap-2 text-center py-2 border-t border-b mb-3">
+            <div>
+              <div class="text-xs text-gray-500">Questions</div>
+              <div class="text-sm font-medium">{{ exam.questionCount }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500">Time</div>
+              <div class="text-sm font-medium">{{ exam.timeLimit || 'No limit' }}</div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500">Randomized</div>
+              <div class="text-sm font-medium">{{ exam.randomize ? 'Yes' : 'No' }}</div>
+            </div>
+          </div>
+          
+          <!-- Action button -->
+          <button 
+            (click)="startExam(exam._id)"
+            [disabled]="!exam.active"
+            class="w-full py-2 rounded text-center font-medium text-sm"
+            [class.bg-blue-600]="exam.active"
+            [class.hover:bg-blue-700]="exam.active"
+            [class.bg-gray-400]="!exam.active"
+            [class.cursor-not-allowed]="!exam.active"
+            [class.text-white]="true">
+            {{ exam.active ? 'Start Practice' : 'Unavailable' }}
           </button>
         </div>
       </div>
     </div>
-  </div>
-
-  <!-- Pagination -->
-  <div class="flex justify-between items-center mt-6 py-4">
-    <div class="text-sm text-gray-600">
-      Showing {{ startIndex + 1 }}-{{ endIndex }} of {{ filteredCertifications.length }} exams
-    </div>
     
-    <div class="flex gap-2">
-      <button 
-        (click)="previousPage()"
-        [disabled]="currentPage === 1"
-        class="px-3 py-1 rounded border" 
-        [class.bg-gray-100]="currentPage === 1"
-        [class.hover:bg-gray-50]="currentPage !== 1"
-        [class.cursor-not-allowed]="currentPage === 1">
-        Previous
-      </button>
-      
-      <div class="flex gap-1">
-        <button *ngFor="let page of getPageNumbers()"
-          (click)="goToPage(page)"
-          class="w-8 h-8 rounded-full"
-          [class.bg-blue-600]="currentPage === page"
-          [class.text-white]="currentPage === page"
-          [class.hover:bg-gray-100]="currentPage !== page">
-          {{ page }}
-        </button>
+    <!-- Pagination (Simplified) -->
+    <div *ngIf="paginatedExams.length > 0" class="flex justify-between items-center">
+      <div class="text-sm text-gray-600">
+        Showing {{ startIndex + 1 }}-{{ endIndex }} of {{ filteredExams.length }} exams
       </div>
       
-      <button 
-        (click)="nextPage()"
-        [disabled]="currentPage === totalPages"
-        class="px-3 py-1 rounded border"
-        [class.bg-gray-100]="currentPage === totalPages"
-        [class.hover:bg-gray-50]="currentPage !== totalPages"
-        [class.cursor-not-allowed]="currentPage === totalPages">
-        Next
-      </button>
+      <div class="flex gap-1">
+        <button 
+          (click)="previousPage()"
+          [disabled]="currentPage === 1"
+          class="px-3 py-1 rounded border" 
+          [class.text-gray-400]="currentPage === 1"
+          [class.cursor-not-allowed]="currentPage === 1">
+          Previous
+        </button>
+        
+        <div class="flex gap-1">
+          <button *ngFor="let page of getPageNumbers()"
+            (click)="goToPage(page)"
+            class="w-8 h-8 rounded"
+            [class.bg-blue-600]="currentPage === page"
+            [class.text-white]="currentPage === page"
+            [class.hover:bg-gray-100]="currentPage !== page">
+            {{ page }}
+          </button>
+        </div>
+        
+        <button 
+          (click)="nextPage()"
+          [disabled]="currentPage === totalPages"
+          class="px-3 py-1 rounded border"
+          [class.text-gray-400]="currentPage === totalPages"
+          [class.cursor-not-allowed]="currentPage === totalPages">
+          Next
+        </button>
+      </div>
     </div>
   </div>
 </div>

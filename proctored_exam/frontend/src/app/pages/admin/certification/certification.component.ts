@@ -4,23 +4,10 @@ import { Component, OnInit } from '@angular/core';
 import { AdminService } from 'src/app/services/admin.service';
 import { NotificationService } from 'src/app/services/notification.service';
 import { CertificationFormData } from './create-certification-modal/create-certification-modal.component';
+import { Certification } from './domain-modal/domain-modal.component';
+import { Domain } from 'src/app/models/certification.interface';
 
-interface Certification {
-  _id: string;
-  name: string;
-  code: string;
-  provider: string;
-  description: string;
-  active: boolean;
-  passingScore: number;
-  timeLimit: number;
-  domains: Domain[];
-}
 
-interface Domain {
-  name: string;
-  weight?: number;
-}
 
 interface CertificationStats {
   [key: string]: {

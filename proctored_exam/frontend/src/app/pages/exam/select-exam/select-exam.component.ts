@@ -1,119 +1,219 @@
-// select-exam.component.ts
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { Certification } from 'src/app/models/certification.interface';
+import { Exam } from 'src/app/models/exam.interface';
+import { ExamService } from 'src/app/services/exam.service';
+import { NotificationService } from 'src/app/services/notification.service';
 
-interface Certification {
-  _id: string;
-  name: string;
-  code: string;
-  provider: string;
-  description: string;
-  passingScore: number;
-  questionsCount: number;
-  timeLimit: number;
-  domains: string[];
-}
+
 
 @Component({
   selector: 'app-select-exam',
-  templateUrl: './select-exam.component.html'
+  templateUrl: './select-exam.component.html',
 })
 export class SelectExamComponent implements OnInit {
-  // Mock data with the correct interface structure
-  certifications: Certification[] = Array(20).fill(null).map((_, index) => {
-    const providers = ['AWS', 'Azure', 'GCP', 'Oracle', 'Cisco'];
-    const certTypes = ['Associate', 'Professional', 'Expert', 'Specialty'];
-    const providerIndex = index % providers.length;
-    const certTypeIndex = index % certTypes.length;
-
-    return {
-      _id: (index + 1).toString(),
-      name: `${providers[providerIndex]} ${certTypes[certTypeIndex]} Certification`,
-      code: `${providers[providerIndex].substring(0, 2)}-${(index + 1).toString().padStart(3, '0')}`,
-      provider: providers[providerIndex],
-      description: `Complete practice exam to prepare for the ${providers[providerIndex]} ${certTypes[certTypeIndex]} certification.`,
-      passingScore: 70 + (index % 5),
-      questionsCount: 50 + (index % 4) * 10,
-      timeLimit: 90 + (index % 3) * 30,
-      domains: [
-        'Architecture Overview',
-        'Security and Compliance',
-        'Technology Implementation',
-        'Operational Excellence'
-      ]
-    };
-  });
-
-  // Pagination
-  currentPage = 1;
-  itemsPerPage = 6;
-  searchTerm = '';
-
-  // Computed properties
-  get filteredCertifications(): Certification[] {
-    return this.certifications.filter(cert =>
-      cert.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      cert.code.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
-      cert.provider.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
+  // All certifications and exams
+  certifications: Certification[] = [];
+  exams: Exam[] = [];
+  
+  // Filtered and paginated exams
+  filteredExams: Exam[] = [];
+  paginatedExams: Exam[] = [];
+  
+  // Certification filter
+  selectedCertificationId: string = '';
+  selectedCertification: Certification | null = null;
+  
+  // Search and filter properties
+  searchTerm: string = '';
+  showActiveOnly: boolean = true;
+  
+  // Pagination properties
+  currentPage: number = 1;
+  itemsPerPage: number = 6;
+  totalPages: number = 1;
+  startIndex: number = 0;
+  endIndex: number = 0;
+  
+  // Map to cache certification details for quick lookup
+  certificationMap: Map<string, Certification> = new Map();
+  
+  constructor(
+    private examService: ExamService,
+    private notificationService: NotificationService,
+    private router: Router
+  ) {}
+  
+  ngOnInit(): void {
+    this.loadCertifications();
+    this.loadExams();
   }
-
-  get totalPages(): number {
-    return Math.ceil(this.filteredCertifications.length / this.itemsPerPage);
+  
+  // Load all certifications
+  loadCertifications(): void {
+    this.examService.getCertifications().subscribe({
+      next: (response) => {
+        const data: Certification[] = response.data;
+        // Filter only active certifications
+        this.certifications = data.filter(cert => cert.active);
+        
+        // Build certification map for quick lookup
+        this.certificationMap.clear();
+        for (const cert of this.certifications) {
+          this.certificationMap.set(cert._id, cert);
+        }
+      },
+      error: (error) => {
+        console.log(error)
+       this.notificationService.showError('unable to load certifications')
+      }
+    });
   }
-
-  get startIndex(): number {
-    return (this.currentPage - 1) * this.itemsPerPage;
+  
+  // Load all exams
+  loadExams(): void {
+    this.examService.getExams().subscribe({
+      next: (response) => {
+        const data: Exam[] = response.data;
+        this.exams = data;
+        this.applyFilters();
+      },
+      error: (error) => {
+        console.error('Error loading exams:', error);
+      }
+    });
   }
+  
+  // Apply all filters (certification, search term, active status)
+  applyFilters(): void {
+    let filtered = [...this.exams];
 
-  get endIndex(): number {
-    return Math.min(this.startIndex + this.itemsPerPage, this.filteredCertifications.length);
+    console.log(filtered)
+    
+    // Filter by certification if selected
+    if (this.selectedCertificationId) {
+      filtered = filtered.filter(exam => exam.certificationId._id === this.selectedCertificationId);
+    }
+    
+    // Filter by active status if enabled
+    if (this.showActiveOnly) {
+      filtered = filtered.filter(exam => exam.active);
+    }
+    
+    // Filter by search term
+    if (this.searchTerm) {
+      const term = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(exam => 
+        exam.name.toLowerCase().includes(term) ||
+        (exam.description && exam.description.toLowerCase().includes(term))
+      );
+    }
+    
+    this.filteredExams = filtered;
+    this.totalPages = Math.ceil(this.filteredExams.length / this.itemsPerPage);
+    
+    // Reset to first page when filters change
+    this.currentPage = 1;
+    this.updatePaginatedExams();
   }
-
-  get paginatedCertifications(): Certification[] {
-    return this.filteredCertifications.slice(this.startIndex, this.endIndex);
+  
+  // Update paginated exams based on current page
+  updatePaginatedExams(): void {
+    this.startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    this.endIndex = Math.min(this.startIndex + this.itemsPerPage, this.filteredExams.length);
+    
+    this.paginatedExams = this.filteredExams.slice(this.startIndex, this.endIndex);
   }
-
-  constructor(private router: Router) {}
-
-  ngOnInit(): void {}
-
-  // Pagination methods
+  
+  // Get certification name from ID
+  getCertificationName(certificationId: string): string {
+    const certification = this.certificationMap.get(certificationId);
+    return certification ? `${certification.provider} - ${certification.name}` : 'Unknown';
+  }
+  
+  // Handle certification change
+  onCertificationChange(): void {
+    // Update selected certification object
+    this.selectedCertification = this.selectedCertificationId ? 
+      this.certificationMap.get(this.selectedCertificationId) || null : null;
+    
+    // Apply filters
+    this.applyFilters();
+  }
+  
+  // Search event handler
+  onSearch(): void {
+    this.applyFilters();
+  }
+  
+  // Items per page change handler
+  onItemsPerPageChange(): void {
+    this.totalPages = Math.ceil(this.filteredExams.length / this.itemsPerPage);
+    
+    // Ensure current page is still valid
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages || 1;
+    }
+    
+    this.updatePaginatedExams();
+  }
+  
+  // Pagination navigation methods
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
+      this.updatePaginatedExams();
     }
   }
-
+  
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
+      this.updatePaginatedExams();
     }
   }
-
+  
   goToPage(page: number): void {
-    this.currentPage = page;
-  }
-
-  getPageNumbers(): number[] {
-    const pages: number[] = [];
-    for (let i = 1; i <= this.totalPages; i++) {
-      pages.push(i);
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.updatePaginatedExams();
     }
-    return pages;
   }
-
-  // Search and filters
-  onSearch(): void {
-    this.currentPage = 1;
+  
+  // Generate an array of page numbers for pagination buttons
+  getPageNumbers(): number[] {
+    const pageNumbers: number[] = [];
+    const maxVisiblePages = 5;
+    
+    if (this.totalPages <= maxVisiblePages) {
+      // If total pages are less than or equal to max visible, show all pages
+      for (let i = 1; i <= this.totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      // Always include first page, last page, current page, and pages adjacent to current
+      const firstPage = 1;
+      const lastPage = this.totalPages;
+      
+      // Add first page
+      pageNumbers.push(firstPage);
+      
+      // Add pages around current page
+      for (let i = Math.max(2, this.currentPage - 1); i <= Math.min(this.totalPages - 1, this.currentPage + 1); i++) {
+        pageNumbers.push(i);
+      }
+      
+      // Add last page if it's not already added
+      if (pageNumbers.indexOf(lastPage) === -1) {
+        pageNumbers.push(lastPage);
+      }
+    }
+    
+    return pageNumbers;
   }
-
-  onItemsPerPageChange(): void {
-    this.currentPage = 1;
-  }
-
-  // Navigation
-  startExam(certId: string): void {
-    this.router.navigate(['/exams', certId, 'instructions']);
+  
+  // Start the selected exam
+  startExam(examId: string): void {
+    this.router.navigate(['/exams', examId, 'instructions']);
   }
 }
