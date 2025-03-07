@@ -1,0 +1,946 @@
+<!-- views/admin/certifications.ejs -->
+<%- include('../layouts/admin-layout', { title: title }) %>
+
+<div class="admin-certifications">
+<div class="container mx-auto px-4 py-8">
+<div class="flex justify-between items-center mb-6">
+<h1 class="text-2xl font-bold text-gray-800">Certification Management</h1>
+<button id="add-certification" class="btn btn-primary">
+<i class="fas fa-plus mr-2"></i> Add Certification
+</button>
+</div>
+
+<!-- Certifications Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<% if (certifications && certifications.length > 0) { %>
+  <% certifications.forEach(cert => { %>
+    <div class="certification-card">
+      <div class="cert-header">
+        <div class="cert-icon">
+          <% if (cert.provider.toLowerCase() === 'aws') { %>
+            <i class="fab fa-aws"></i>
+          <% } else if (cert.provider.toLowerCase() === 'terraform') { %>
+            <i class="fas fa-cube"></i>
+          <% } else if (cert.provider.toLowerCase() === 'kubernetes') { %>
+            <i class="fas fa-dharmachakra"></i>
+          <% } else { %>
+            <i class="fas fa-certificate"></i>
+          <% } %>
+        </div>
+        <div class="cert-info">
+          <h3 class="cert-name"><%= cert.name %></h3>
+          <div class="cert-code"><%= cert.code %></div>
+          <div class="cert-provider">Provider: <%= cert.provider %></div>
+        </div>
+        <div class="cert-status <%= cert.active ? 'active' : 'inactive' %>">
+          <%= cert.active ? 'Active' : 'Inactive' %>
+        </div>
+      </div>
+
+      <div class="cert-stats">
+        <div class="stat-item">
+          <div class="stat-icon bg-purple-100 text-purple-600">
+            <i class="fas fa-tasks"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value"><%= certStats[cert._id]?.examCount || 0 %></div>
+            <div class="stat-label">Exams</div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-icon bg-blue-100 text-blue-600">
+            <i class="fas fa-question"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value"><%= certStats[cert._id]?.questionCount || 0 %></div>
+            <div class="stat-label">Questions</div>
+          </div>
+        </div>
+
+        <div class="stat-item">
+          <div class="stat-icon bg-green-100 text-green-600">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value"><%= certStats[cert._id]?.attemptCount || 0 %></div>
+            <div class="stat-label">Attempts</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cert-details">
+        <div class="detail-row">
+          <div class="detail-label">Passing Score:</div>
+          <div class="detail-value"><%= cert.passingScore %>%</div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">Time Limit:</div>
+          <div class="detail-value"><%= cert.timeLimit %> min</div>
+        </div>
+
+        <div class="detail-row">
+          <div class="detail-label">Domains:</div>
+          <div class="detail-value"><%= cert.domains.length %></div>
+        </div>
+      </div>
+
+      <div class="domains-preview">
+        <div class="domains-header">Domains</div>
+        <div class="domains-list">
+          <% cert.domains.slice(0, 3).forEach(domain => { %>
+            <div class="domain-badge"><%= domain.name %></div>
+          <% }); %>
+          
+          <% if (cert.domains.length > 3) { %>
+            <div class="domain-badge more">
+              +<%= cert.domains.length - 3 %> more
+            </div>
+          <% } %>
+        </div>
+      </div>
+
+      <div class="cert-actions">
+        <button class="edit-certification btn btn-outline btn-sm" data-id="<%= cert._id %>">
+          <i class="fas fa-edit mr-1"></i> Edit
+        </button>
+        <button class="view-domains btn btn-outline btn-sm" data-id="<%= cert._id %>">
+          <i class="fas fa-list-ul mr-1"></i> Domains
+        </button>
+        <button class="toggle-status btn <%= cert.active ? 'btn-outline' : 'btn-secondary' %> btn-sm" 
+                data-id="<%= cert._id %>" data-active="<%= cert.active %>">
+          <i class="fas <%= cert.active ? 'fa-toggle-off' : 'fa-toggle-on' %> mr-1"></i>
+          <%= cert.active ? 'Deactivate' : 'Activate' %>
+        </button>
+      </div>
+    </div>
+  <% }); %>
+<% } else { %>
+  <div class="col-span-3 text-center py-12 bg-white rounded-lg shadow">
+    <div class="text-gray-400 mb-4">
+      <i class="fas fa-certificate text-5xl"></i>
+    </div>
+    <h3 class="text-xl font-medium text-gray-700 mb-2">No Certifications Available</h3>
+    <p class="text-gray-500 mb-4">Get started by adding your first certification.</p>
+    <button id="empty-add-certification" class="btn btn-primary">
+      <i class="fas fa-plus mr-2"></i> Add Certification
+    </button>
+  </div>
+<% } %>
+</div>
+</div>
+</div>
+
+<!-- Certification Modal -->
+<div id="certification-modal" class="modal hidden">
+<div class="modal-overlay"></div>
+<div class="modal-container">
+<div class="modal-header">
+<h2 id="modal-title">Add New Certification</h2>
+<button id="close-modal" class="modal-close">
+<i class="fas fa-times"></i>
+</button>
+</div>
+<div class="modal-body">
+<form id="certification-form">
+<input type="hidden" id="certification-id" name="id">
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="form-group md:col-span-2">
+<label for="certification-name" class="form-label required">Certification Name</label>
+<input type="text" id="certification-name" name="name" class="form-input" 
+     placeholder="AWS Certified Solutions Architect - Associate" required>
+</div>
+
+<div class="form-group">
+<label for="certification-code" class="form-label required">Certification Code</label>
+<input type="text" id="certification-code" name="code" class="form-input" 
+     placeholder="SAA-C03" required>
+</div>
+
+<div class="form-group">
+<label for="certification-provider" class="form-label required">Provider</label>
+<select id="certification-provider" name="provider" class="form-select" required>
+<option value="">Select Provider</option>
+<option value="AWS">AWS</option>
+<option value="Terraform">Terraform</option>
+<option value="Kubernetes">Kubernetes</option>
+<option value="Microsoft">Microsoft</option>
+<option value="Google">Google</option>
+<option value="Oracle">Oracle</option>
+<option value="Cisco">Cisco</option>
+<option value="CompTIA">CompTIA</option>
+<option value="Other">Other</option>
+</select>
+</div>
+
+<div class="form-group md:col-span-2">
+<label for="certification-description" class="form-label">Description</label>
+<textarea id="certification-description" name="description" class="form-textarea" rows="3" 
+        placeholder="Validates expertise in designing distributed applications and systems on AWS..."></textarea>
+</div>
+
+<div class="form-group">
+<label for="certification-passing-score" class="form-label required">Passing Score (%)</label>
+<input type="number" id="certification-passing-score" name="passingScore" class="form-input" 
+     min="1" max="100" value="72" required>
+</div>
+
+<div class="form-group">
+<label for="certification-time-limit" class="form-label required">Time Limit (minutes)</label>
+<input type="number" id="certification-time-limit" name="timeLimit" class="form-input" 
+     min="1" max="1440" value="180" required>
+</div>
+</div>
+
+<div class="form-group mt-4">
+<label class="form-label required">Domains</label>
+<div id="domains-container" class="space-y-3 mt-2">
+<div class="domain-row grid grid-cols-5 gap-2">
+<div class="col-span-4">
+  <input type="text" name="domain_0_name" class="form-input domain-name" 
+         placeholder="Domain name" required>
+</div>
+<div class="col-span-1 flex">
+  <button type="button" class="remove-domain btn btn-outline btn-sm w-full disabled opacity-50 cursor-not-allowed">
+    <i class="fas fa-trash"></i>
+  </button>
+</div>
+</div>
+</div>
+
+<button type="button" id="add-domain" class="mt-3 text-sm text-blue-600 hover:text-blue-800">
+<i class="fas fa-plus-circle mr-1"></i> Add Domain
+</button>
+</div>
+</form>
+</div>
+<div class="modal-footer">
+<button id="save-certification" class="btn btn-primary">Save Certification</button>
+<button id="cancel-certification" class="btn btn-outline">Cancel</button>
+</div>
+</div>
+</div>
+
+<!-- Domains Modal -->
+<div id="domains-modal" class="modal hidden">
+<div class="modal-overlay"></div>
+<div class="modal-container">
+<div class="modal-header">
+<h2 id="domains-modal-title">Certification Domains</h2>
+<button id="close-domains-modal" class="modal-close">
+<i class="fas fa-times"></i>
+</button>
+</div>
+<div class="modal-body">
+<div id="domains-loading" class="text-center py-8">
+<div class="spinner"></div>
+<p class="mt-2 text-gray-600">Loading domains...</p>
+</div>
+
+<div id="domains-content" class="hidden">
+<div id="certification-name-display" class="text-lg font-medium text-gray-800 mb-4"></div>
+
+<div class="domains-table-container">
+<table class="w-full">
+<thead>
+<tr>
+  <th class="th-cell">Domain Name</th>
+  <th class="th-cell">Weight (%)</th>
+  <th class="th-cell">Question Count</th>
+</tr>
+</thead>
+<tbody id="domains-table-body">
+<!-- Domains will be populated dynamically -->
+</tbody>
+</table>
+</div>
+
+<div id="domains-empty" class="hidden text-center py-8">
+<div class="text-gray-400 mb-4">
+<i class="fas fa-list-ul text-4xl"></i>
+</div>
+<h3 class="text-lg font-medium text-gray-700 mb-2">No Domains Defined</h3>
+<p class="text-gray-500">This certification doesn't have any domains defined.</p>
+</div>
+</div>
+</div>
+<div class="modal-footer">
+<button id="edit-domains" class="btn btn-primary">Edit Domains</button>
+<button id="close-domains" class="btn btn-outline">Close</button>
+</div>
+</div>
+</div>
+
+<!-- Custom Styles -->
+<style>
+.certification-card {
+@apply bg-white rounded-lg shadow-md overflow-hidden transition-shadow duration-200 hover:shadow-lg;
+}
+
+.cert-header {
+@apply flex items-center p-5 border-b border-gray-200;
+}
+
+.cert-icon {
+@apply text-3xl mr-4 flex-shrink-0;
+}
+
+.cert-icon i {
+@apply text-blue-600;
+}
+
+.cert-info {
+@apply flex-grow;
+}
+
+.cert-name {
+@apply text-lg font-semibold text-gray-800;
+}
+
+.cert-code {
+@apply text-sm text-gray-500;
+}
+
+.cert-provider {
+@apply text-xs text-gray-500 mt-1;
+}
+
+.cert-status {
+@apply ml-4 px-2.5 py-0.5 rounded-full text-xs font-medium flex-shrink-0;
+}
+
+.cert-status.active {
+@apply bg-green-100 text-green-800;
+}
+
+.cert-status.inactive {
+@apply bg-gray-100 text-gray-800;
+}
+
+.cert-stats {
+@apply grid grid-cols-3 divide-x divide-gray-100 bg-gray-50;
+}
+
+.stat-item {
+@apply flex items-center p-3;
+}
+
+.stat-icon {
+@apply p-2 rounded-full mr-3 flex-shrink-0;
+}
+
+.stat-content {
+@apply flex flex-col;
+}
+
+.stat-value {
+@apply font-semibold text-gray-800;
+}
+
+.stat-label {
+@apply text-xs text-gray-500;
+}
+
+.cert-details {
+@apply p-4 border-t border-gray-200;
+}
+
+.detail-row {
+@apply flex justify-between py-1;
+}
+
+.detail-label {
+@apply text-sm text-gray-600;
+}
+
+.detail-value {
+@apply text-sm font-medium text-gray-800;
+}
+
+.domains-preview {
+@apply p-4 border-t border-gray-200;
+}
+
+.domains-header {
+@apply text-sm font-medium text-gray-600 mb-2;
+}
+
+.domains-list {
+@apply flex flex-wrap gap-2;
+}
+
+.domain-badge {
+@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800;
+}
+
+.domain-badge.more {
+@apply bg-gray-100 text-gray-800;
+}
+
+.cert-actions {
+@apply flex justify-between p-4 bg-gray-50 border-t border-gray-200;
+}
+
+.modal {
+@apply fixed inset-0 z-50 overflow-y-auto;
+}
+
+.modal-overlay {
+@apply fixed inset-0 bg-black bg-opacity-50;
+}
+
+.modal-container {
+@apply bg-white rounded-lg shadow-xl mx-auto my-8 max-w-3xl max-h-full overflow-hidden relative;
+}
+
+.modal-header {
+@apply px-6 py-4 bg-white border-b border-gray-200 flex justify-between items-center;
+}
+
+.modal-close {
+@apply text-gray-400 hover:text-gray-500;
+}
+
+.modal-body {
+@apply px-6 py-4 max-h-[calc(100vh-200px)] overflow-y-auto;
+}
+
+.modal-footer {
+@apply px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3;
+}
+
+.form-group {
+@apply mb-4;
+}
+
+.form-label {
+@apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.form-label.required::after {
+content: "*";
+@apply text-red-500 ml-1;
+}
+
+.form-input, .form-select, .form-textarea {
+@apply block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm;
+}
+
+.btn {
+@apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+}
+
+.btn-primary {
+@apply bg-blue-600 text-white hover:bg-blue-700;
+}
+
+.btn-secondary {
+@apply bg-gray-600 text-white hover:bg-gray-700;
+}
+
+.btn-outline {
+@apply bg-white text-gray-700 border-gray-300 hover:bg-gray-50;
+}
+
+.btn-sm {
+@apply px-3 py-1 text-xs;
+}
+
+.th-cell {
+@apply px-4 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.td-cell {
+@apply px-4 py-3 whitespace-nowrap text-sm;
+}
+
+.spinner {
+@apply w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto;
+}
+
+.hidden {
+@apply hidden;
+}
+
+.disabled {
+@apply opacity-50 cursor-not-allowed;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// DOM elements
+const certificationModal = document.getElementById('certification-modal');
+const domainsModal = document.getElementById('domains-modal');
+
+// Modal elements
+const modalTitle = document.getElementById('modal-title');
+const certificationForm = document.getElementById('certification-form');
+const certificationId = document.getElementById('certification-id');
+const domainsContainer = document.getElementById('domains-container');
+
+// Button event listeners
+document.getElementById('add-certification').addEventListener('click', openAddCertificationModal);
+if (document.getElementById('empty-add-certification')) {
+document.getElementById('empty-add-certification').addEventListener('click', openAddCertificationModal);
+}
+document.getElementById('close-modal').addEventListener('click', closeCertificationModal);
+document.getElementById('cancel-certification').addEventListener('click', closeCertificationModal);
+document.getElementById('close-domains-modal').addEventListener('click', closeDomainsModal);
+document.getElementById('close-domains').addEventListener('click', closeDomainsModal);
+document.getElementById('add-domain').addEventListener('click', addDomain);
+
+// Add click handlers for edit/view/toggle buttons
+document.querySelectorAll('.edit-certification').forEach(btn => {
+btn.addEventListener('click', () => editCertification(btn.dataset.id));
+});
+
+document.querySelectorAll('.view-domains').forEach(btn => {
+btn.addEventListener('click', () => viewDomains(btn.dataset.id));
+});
+
+document.querySelectorAll('.toggle-status').forEach(btn => {
+btn.addEventListener('click', () => toggleCertificationStatus(
+btn.dataset.id, 
+btn.dataset.active === 'true'
+));
+});
+
+// Form submission handlers
+document.getElementById('certification-form').addEventListener('submit', handleCertificationFormSubmit);
+document.getElementById('save-certification').addEventListener('click', () => certificationForm.requestSubmit());
+document.getElementById('edit-domains').addEventListener('click', editCurrentCertificationDomains);
+
+// Open add certification modal
+function openAddCertificationModal() {
+modalTitle.textContent = 'Add New Certification';
+certificationId.value = '';
+certificationForm.reset();
+
+// Clear domains except first one
+domainsContainer.innerHTML = `
+<div class="domain-row grid grid-cols-5 gap-2">
+<div class="col-span-4">
+<input type="text" name="domain_0_name" class="form-input domain-name" 
+     placeholder="Domain name" required>
+</div>
+<div class="col-span-1 flex">
+<button type="button" class="remove-domain btn btn-outline btn-sm w-full disabled opacity-50 cursor-not-allowed">
+<i class="fas fa-trash"></i>
+</button>
+</div>
+</div>
+`;
+
+certificationModal.classList.remove('hidden');
+}
+
+// Open edit certification modal
+function editCertification(id) {
+modalTitle.textContent = 'Edit Certification';
+
+// Fetch certification data
+fetch(`/admin/certifications/${id}`)
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+const cert = data.certification;
+
+// Set form values
+certificationId.value = cert._id;
+document.getElementById('certification-name').value = cert.name;
+document.getElementById('certification-code').value = cert.code;
+document.getElementById('certification-provider').value = cert.provider;
+document.getElementById('certification-description').value = cert.description || '';
+document.getElementById('certification-passing-score').value = cert.passingScore;
+document.getElementById('certification-time-limit').value = cert.timeLimit;
+
+// Set domains
+domainsContainer.innerHTML = '';
+
+if (cert.domains && cert.domains.length > 0) {
+cert.domains.forEach((domain, index) => {
+  addDomain(domain.name, domain.weight);
+});
+} else {
+// Add one empty domain field if none exist
+addDomain();
+}
+
+certificationModal.classList.remove('hidden');
+} else {
+showAlert('Error loading certification', 'error');
+}
+})
+.catch(error => {
+console.error('Error fetching certification:', error);
+showAlert('Error loading certification', 'error');
+});
+}
+
+// Add domain row
+function addDomain(name = '', weight = 0) {
+const domainCount = domainsContainer.children.length;
+const domainIndex = domainCount;
+
+const domainRow = document.createElement('div');
+domainRow.className = 'domain-row grid grid-cols-5 gap-2';
+domainRow.innerHTML = `
+<div class="col-span-4">
+<input type="text" name="domain_${domainIndex}_name" class="form-input domain-name" 
+   placeholder="Domain name" value="${name}" required>
+</div>
+<div class="col-span-1 flex">
+<button type="button" class="remove-domain btn btn-outline btn-sm w-full ${domainCount === 0 ? 'disabled opacity-50 cursor-not-allowed' : ''}">
+<i class="fas fa-trash"></i>
+</button>
+</div>
+`;
+
+domainsContainer.appendChild(domainRow);
+
+// Add remove event listener
+const removeBtn = domainRow.querySelector('.remove-domain');
+if (domainCount > 0) {
+removeBtn.addEventListener('click', function() {
+domainRow.remove();
+updateDomainIndices();
+});
+}
+}
+
+// Update domain input indices after removal
+function updateDomainIndices() {
+const domainRows = domainsContainer.querySelectorAll('.domain-row');
+
+domainRows.forEach((row, index) => {
+const nameInput = row.querySelector('.domain-name');
+nameInput.name = `domain_${index}_name`;
+});
+
+// Disable remove button on first domain if it's the only one
+if (domainRows.length === 1) {
+domainRows[0].querySelector('.remove-domain').classList.add('disabled', 'opacity-50', 'cursor-not-allowed');
+}
+}
+
+// Handle certification form submission
+function handleCertificationFormSubmit(e) {
+e.preventDefault();
+
+// Validate form
+if (!validateCertificationForm()) {
+return;
+}
+
+// Collect form data
+const formData = new FormData(certificationForm);
+
+// Process domains
+const domains = [];
+const domainRows = domainsContainer.querySelectorAll('.domain-row');
+
+domainRows.forEach((row, index) => {
+const nameInput = row.querySelector(`input[name="domain_${index}_name"]`);
+if (nameInput && nameInput.value.trim()) {
+domains.push({
+name: nameInput.value.trim(),
+weight: 0 // Weight is not used in this implementation
+});
+}
+});
+
+// Build request data
+const requestData = {
+id: formData.get('id') || undefined,
+name: formData.get('name'),
+code: formData.get('code'),
+provider: formData.get('provider'),
+description: formData.get('description'),
+passingScore: parseInt(formData.get('passingScore')),
+timeLimit: parseInt(formData.get('timeLimit')),
+domains: domains
+};
+
+// Determine if creating or updating
+const isUpdate = !!requestData.id;
+const url = isUpdate ? 
+`/admin/certifications/${requestData.id}` : 
+'/admin/certifications';
+const method = isUpdate ? 'PUT' : 'POST';
+
+// Send request
+fetch(url, {
+method: method,
+headers: {
+'Content-Type': 'application/json',
+},
+body: JSON.stringify(requestData)
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+closeCertificationModal();
+showAlert(
+`Certification ${isUpdate ? 'updated' : 'created'} successfully`, 
+'success'
+);
+// Reload page after a short delay
+setTimeout(() => {
+window.location.reload();
+}, 1500);
+} else {
+showAlert(data.message || `Error ${isUpdate ? 'updating' : 'creating'} certification`, 'error');
+}
+})
+.catch(error => {
+console.error(`Error ${isUpdate ? 'updating' : 'creating'} certification:`, error);
+showAlert(`Error ${isUpdate ? 'updating' : 'creating'} certification`, 'error');
+});
+}
+
+// Validate certification form
+function validateCertificationForm() {
+// Check required fields
+const name = document.getElementById('certification-name').value.trim();
+const code = document.getElementById('certification-code').value.trim();
+const provider = document.getElementById('certification-provider').value;
+const passingScore = parseInt(document.getElementById('certification-passing-score').value);
+const timeLimit = parseInt(document.getElementById('certification-time-limit').value);
+
+if (!name) {
+showAlert('Certification name is required', 'error');
+return false;
+}
+
+if (!code) {
+showAlert('Certification code is required', 'error');
+return false;
+}
+
+if (!provider) {
+showAlert('Provider is required', 'error');
+return false;
+}
+
+if (isNaN(passingScore) || passingScore < 1 || passingScore > 100) {
+showAlert('Passing score must be between 1 and 100', 'error');
+return false;
+}
+
+if (isNaN(timeLimit) || timeLimit < 1) {
+showAlert('Time limit must be a positive number', 'error');
+return false;
+}
+
+// Check if at least one domain is defined
+const domains = [];
+const domainRows = domainsContainer.querySelectorAll('.domain-row');
+
+let hasValidDomain = false;
+domainRows.forEach(row => {
+const nameInput = row.querySelector('.domain-name');
+if (nameInput && nameInput.value.trim()) {
+hasValidDomain = true;
+}
+});
+
+if (!hasValidDomain) {
+showAlert('At least one domain must be defined', 'error');
+return false;
+}
+
+return true;
+}
+
+// View domains
+function viewDomains(id) {
+domainsModal.classList.remove('hidden');
+document.getElementById('domains-loading').classList.remove('hidden');
+document.getElementById('domains-content').classList.add('hidden');
+document.getElementById('domains-empty').classList.add('hidden');
+document.getElementById('edit-domains').dataset.id = id;
+
+fetch(`/admin/certifications/${id}`)
+.then(response => response.json())
+.then(data => {
+document.getElementById('domains-loading').classList.add('hidden');
+
+if (data.success) {
+const cert = data.certification;
+document.getElementById('certification-name-display').textContent = cert.name;
+
+if (cert.domains && cert.domains.length > 0) {
+renderDomains(cert.domains, cert._id);
+document.getElementById('domains-content').classList.remove('hidden');
+} else {
+document.getElementById('domains-empty').classList.remove('hidden');
+}
+} else {
+showAlert(data.message || 'Error loading certification domains', 'error');
+closeDomainsModal();
+}
+})
+.catch(error => {
+console.error('Error loading domains:', error);
+showAlert('Error loading certification domains', 'error');
+closeDomainsModal();
+});
+}
+
+// Render domains table
+function renderDomains(domains, certId) {
+const tableBody = document.getElementById('domains-table-body');
+tableBody.innerHTML = '';
+
+// Fetch domain question counts (if needed in a real implementation)
+// For now, we'll use placeholder values
+
+domains.forEach(domain => {
+const row = document.createElement('tr');
+row.className = 'border-b border-gray-200 hover:bg-gray-50';
+row.innerHTML = `
+<td class="td-cell font-medium">${domain.name}</td>
+<td class="td-cell">${domain.weight || 'N/A'}</td>
+<td class="td-cell">
+<span class="question-count">${Math.floor(Math.random() * 100) + 20}</span>
+</td>
+`;
+
+tableBody.appendChild(row);
+});
+}
+
+// Edit current certification domains
+function editCurrentCertificationDomains() {
+const certId = document.getElementById('edit-domains').dataset.id;
+closeDomainsModal();
+editCertification(certId);
+}
+
+// Toggle certification status
+function toggleCertificationStatus(id, isCurrentlyActive) {
+const newStatus = !isCurrentlyActive;
+const action = newStatus ? 'activate' : 'deactivate';
+
+if (!confirm(`Are you sure you want to ${action} this certification?`)) {
+return;
+}
+
+fetch(`/admin/certifications/${id}`, {
+method: 'PUT',
+headers: {
+'Content-Type': 'application/json',
+},
+body: JSON.stringify({
+active: newStatus
+})
+})
+.then(response => response.json())
+.then(data => {
+if (data.success) {
+showAlert(`Certification ${action}d successfully`, 'success');
+// Reload page after a short delay
+setTimeout(() => {
+window.location.reload();
+}, 1000);
+} else {
+showAlert(data.message || `Failed to ${action} certification`, 'error');
+}
+})
+.catch(error => {
+console.error(`Error ${action}ing certification:`, error);
+showAlert(`Failed to ${action} certification`, 'error');
+});
+}
+
+// Modal control functions
+function closeCertificationModal() {
+certificationModal.classList.add('hidden');
+}
+
+function closeDomainsModal() {
+domainsModal.classList.add('hidden');
+}
+
+// Show alert notification
+function showAlert(message, type = 'info') {
+// Create alert element if it doesn't exist
+let alertContainer = document.getElementById('alert-container');
+if (!alertContainer) {
+alertContainer = document.createElement('div');
+alertContainer.id = 'alert-container';
+alertContainer.className = 'fixed top-4 right-4 z-50 flex flex-col space-y-2';
+document.body.appendChild(alertContainer);
+}
+
+// Create alert
+const alert = document.createElement('div');
+alert.className = `alert alert-${type} transform transition-all duration-300 translate-x-full`;
+alert.innerHTML = `
+<div class="flex items-center">
+<div class="flex-shrink-0">
+${type === 'success' ? 
+'<i class="fas fa-check-circle text-green-500"></i>' : 
+type === 'error' ? 
+'<i class="fas fa-exclamation-circle text-red-500"></i>' :
+'<i class="fas fa-info-circle text-blue-500"></i>'
+}
+</div>
+<div class="ml-3">
+<p class="text-sm font-medium">${message}</p>
+</div>
+<div class="ml-auto pl-3">
+<button class="alert-close">
+<i class="fas fa-times text-gray-400 hover:text-gray-500"></i>
+</button>
+</div>
+</div>
+`;
+
+// Add alert styles based on type
+if (type === 'success') {
+alert.classList.add('bg-green-50', 'border-green-100', 'text-green-800');
+} else if (type === 'error') {
+alert.classList.add('bg-red-50', 'border-red-100', 'text-red-800');
+} else if (type === 'warning') {
+alert.classList.add('bg-yellow-50', 'border-yellow-100', 'text-yellow-800');
+} else {
+alert.classList.add('bg-blue-50', 'border-blue-100', 'text-blue-800');
+}
+
+// Add base alert styles
+alert.classList.add('rounded-md', 'p-4', 'border', 'shadow-md', 'w-80');
+
+// Add to container
+alertContainer.appendChild(alert);
+
+// Animate in
+setTimeout(() => {
+alert.classList.remove('translate-x-full');
+}, 10);
+
+// Add close handler
+alert.querySelector('.alert-close').addEventListener('click', () => {
+alert.classList.add('translate-x-full');
+setTimeout(() => {
+alert.remove();
+}, 300);
+});
+
+// Auto dismiss after 5 seconds
+setTimeout(() => {
+if (alert.parentNode) {
+alert.classList.add('translate-x-full');
+setTimeout(() => {
+alert.remove();
+}, 300);
+}
+}, 5000);
+}
+});
+</script>
+
+<%- include('../layouts/footer') %>
