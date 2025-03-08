@@ -129,7 +129,7 @@
           
           <!-- Action button -->
           <button 
-            (click)="startExam(exam._id)"
+            (click)="goToExamInstructions(exam._id)"
             [disabled]="!exam.active"
             class="w-full py-2 rounded text-center font-medium text-sm"
             [class.bg-blue-600]="exam.active"

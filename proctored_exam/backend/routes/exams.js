@@ -10,7 +10,9 @@ router.get('/:certId/select', examController.selectExam);
 router.get('/:examId/instructions', examController.examInstructions);
 router.get('/:examId/start', examController.startExam);
 router.post('/:examId/submit', examController.submitExamAnswers);
+router.post('/:attemptId/progress', examController.saveProgress);
 router.get('/results/:attemptId', examController.examResults);
-router.get('/resume/:attemptId', examController.resumeExam);
+router.get('/check/attempt/:examId', examController.checkExamAttempt);
+router.get('/:attemptId/resume', examController.resumeExam);
 
 module.exports = router;

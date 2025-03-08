@@ -1,7 +1,5 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
-// import { ExamService } from '../../../services/exam.service';
-// import { ProctorService } from '../../../services/proctor.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 import { ConnectionStatusService } from 'src/app/components/shared/connection-status/connection-status.service';
@@ -11,6 +9,7 @@ import { ExamService } from 'src/app/services/exam.service';
 import { MockProctorService } from 'src/app/services/mock-proctor.service';
 import { NetworkStatusService } from 'src/app/services/network-status.service';
 import { NotificationService } from 'src/app/services/notification.service';
+import { ProctorService } from 'src/app/services/proctor.service';
 
 
 
@@ -95,7 +94,7 @@ export class ExamComponent implements OnInit, OnDestroy {
 
   constructor(
     private examService: ExamService,
-    private proctorService: MockProctorService,
+    private proctorService: ProctorService,
     private notificationService: NotificationService,
     private networkStatusService: NetworkStatusService,
     private saveStatusService: SaveStatusService,
@@ -110,8 +109,18 @@ export class ExamComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.route.params.subscribe(params => {
-      this.initializeExam(params['examId']);
+      this.route.queryParams.subscribe(queryParams => {
+        if (queryParams['resume'] && queryParams['resume'] == 'true') {
+          this.resumeExam(params['examId']);
+        }else {
+          this.initializeExam(params['examId']);
+        }
+      })
     });
+      
+    // Set up auto-save interval
+    this.setupAutoSave();
+
     window.addEventListener('beforeunload', this.boundHandleBeforeUnload);
     // Set up network status listeners
     this.subscribeToNetworkStatus();
@@ -179,16 +188,35 @@ export class ExamComponent implements OnInit, OnDestroy {
           this.initializeProctoring();
         }
   
-        // Set up auto-save interval
-        this.setupAutoSave();
       },
       error: (error) => {
         console.error('Failed to initialize exam:', error);
-        // Handle error (show error message, redirect, etc.)
+        this.notificationService.showError('Failed to initialize exam');
+        this.router.navigate(['/exams/select']);
       }
     });
   }
   
+  private resumeExam(attemptId: string) {
+    this.examService.resumeExam(attemptId).subscribe({
+      next: (response) => {
+        this.examData = response.data;
+        this.timeRemaining = this.examData.timeLimit;
+        this.loadQuestion(0);
+        this.startTimer();
+  
+        if (this.examData.proctorEnabled) {
+          this.initializeProctoring();
+        }
+  
+      },
+      error: (error) => {
+        console.error('Failed to resume exam:', error);
+        this.notificationService.showError('Failed to resume exam');
+        this.router.navigate(['/exams/select']);
+      }
+    });
+  }
   private startTimer() {
     this.updateTimerDisplay();
     
@@ -240,19 +268,7 @@ export class ExamComponent implements OnInit, OnDestroy {
     }
   }
 
-  // loadQuestion(index: number) {
-  //   if (index < 0 || index >= this.examData.questions.length) {
-  //     console.error('Invalid question index:', index);
-  //     return;
-  //   }
-    
-  //   this.examData.currentQuestionIndex = index;
-  //   this.currentQuestion = this.examData.questions[index];
-    
-  //   // Start tracking time for this question
-  //   this.examData.timeSpent[index] = this.examData.timeSpent[index] || 0;
-  //   this.currentQuestionStartTime = Date.now();
-  // }
+
 
     // Add this computed property for filtered questions
     get filteredQuestions(): any[] {
@@ -435,13 +451,16 @@ private setupAutoSave() {
 
 // Mark the exam state as dirty (needing to be saved)
 private markAsDirty() {
-  this.isDirty = true;
-  
-  // Implement debounced saving when user makes changes
-  const now = Date.now();
-  if (now - this.lastSaveTime > this.SAVE_DEBOUNCE_MS) {
-    this.saveProgress();
-    this.lastSaveTime = now;
+  // Only mark as dirty if there are actual answers
+  if (Object.keys(this.examData.answers).length > 0) {
+    this.isDirty = true;
+    
+    // Implement debounced saving when user makes changes
+    const now = Date.now();
+    if (now - this.lastSaveAttempt > this.SAVE_DEBOUNCE_MS) {
+      this.saveProgress();
+      this.lastSaveAttempt = now;
+    }
   }
 }
 
@@ -475,13 +494,24 @@ private markAsDirty() {
       }
       
       // Show offline indicator to user
-      // this.showOfflineIndicator();
+      this.connectionStatusService.showOffline(
+        'You are offline. Your answers will be saved when connection is restored.'
+      );
     }
   }
 
   private async saveProgress() {
     // Save current question state
     this.saveCurrentQuestionState();
+    
+    // Check if there are any answers to save
+    const hasAnswers = Object.keys(this.examData.answers).length > 0;
+    
+    // If nothing has been answered and we're just starting, don't save yet
+    if (!hasAnswers && Object.keys(this.examData.timeSpent).length === 0) {
+      console.log('No answers or changes to save yet');
+      return;
+    }
     
     // Prepare save data
     const saveData = {
@@ -501,19 +531,25 @@ private markAsDirty() {
       this.saveStatusService.showQueued('Changes will be saved when connection is restored');
       return;
     }
-
+  
     this.saveStatusService.showSaving('Saving your progress...');
     
     try {
       // Try to save
-      await this.examService.saveProgress(saveData.attemptId, saveData.data).toPromise();
+      const response = await this.examService.saveProgress(saveData.attemptId, saveData.data).toPromise();
       this.isDirty = false;
-
-      this.saveStatusService.showSaved('Progress saved');
+  
+      // Only show saved message if there were actual changes
+      if (response.message !== 'No changes to save') {
+        this.saveStatusService.showSaved('Progress saved');
+      } else {
+        // Just hide the saving indicator without showing "saved"
+        this.saveStatusService.hide();
+      }
     } catch (error) {
       console.error('Failed to save progress:', error);
-       // Check if it's a network error or a server error
-       if (!navigator.onLine) {
+      // Check if it's a network error or a server error
+      if (!navigator.onLine) {
         // We've gone offline during the save attempt
         this.queueSave(saveData);
         this.connectionStatusService.showOffline(

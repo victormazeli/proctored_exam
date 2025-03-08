@@ -11,8 +11,8 @@ import {
   ProctorConfig,
   ProctorEvent 
 } from '../models/exam.interface';
-import { environment } from 'proctored_exam/frontend/src/environment/environment';
 import { NotificationService } from './notification.service';
+import { environment } from 'src/environment/environment';
 
 @Injectable({
   providedIn: 'root'
@@ -27,8 +27,16 @@ export class ExamService {
   /**
    * Initialize exam data
    */
-  initializeExam(examId: string): Observable<ExamData> {
-    return this.http.get<any>(`${this.API_URL}/${examId}/start`).pipe(
+  initializeExam(examId: string, forceNew: boolean = false): Observable<any> {
+    const params: any = forceNew ? { forceNew: 'true' } : {};
+    let httpParams = new HttpParams();
+      Object.keys(params).forEach(key => {
+        if (params[key]) {
+          httpParams = httpParams.append(key, params[key]);
+        }
+      });
+  
+    return this.http.get<any>(`${this.API_URL}/${examId}/start`, { params: httpParams }).pipe(
       map(data => {
         console.log(data)
         this.examDataSubject.next(data.data);
@@ -47,12 +55,33 @@ export class ExamService {
     )
   }
 
+    /**
+   * Check Exam Attempt
+   */
+    checkPreviousAttempt(examId: string): Observable<any> {
+      return this.http.get<void>(`${this.API_URL}/check/attempt/${examId}`).pipe(
+        catchError(this.handleError("CheckPreviousAttempt", {}))
+      )
+    }
+
   /**
    * Submit exam
    */
-  submitExam(submission: ExamSubmission): Observable<ExamResult> {
-    return this.http.post<ExamResult>(`${this.API_URL}/submit`, submission);
+  submitExam(submission: ExamSubmission): Observable<any> {
+    return this.http.post<ExamResult>(`${this.API_URL}/submit`, submission).pipe(
+      catchError(this.handleError("submitExam", {}))
+    )
   }
+
+    /**
+   * Submit exam
+   */
+    resumeExam(attemptId: any): Observable<any> {
+      return this.http.get<any>(`${this.API_URL}/${attemptId}/resume`).pipe(
+        catchError(this.handleError("resumeExam", {}))
+      )
+    }
+  
 
   /**
    * Get proctor configuration

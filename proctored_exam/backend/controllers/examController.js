@@ -118,7 +118,7 @@ exports.getCertifications = async (req, res) => {
     })
   } catch (err) {
     console.error('Error loading certifications:', err);
-    return res.stats(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Error loading certifications'
     })
@@ -384,10 +384,69 @@ exports.startExam = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to start exam',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      data: null
     });
   }
 };
+
+exports.checkExamAttempt = async(req, res) => {
+  try {
+    const examId = req.params.examId;
+    const exam = await Exam.findById(examId);
+    
+    if (!exam || !exam.active) {
+      return res.status(404).json({
+        success: false,
+        message: 'Exam not found or inactive'
+      });
+    }
+    req.user = await User.findById('67c404114d7db32d2f7e80c9');
+
+        // Check for existing incomplete attempt
+        const existingAttempt = await Attempt.findOne({
+          userId: req.user._id,
+          examId: exam._id,
+          completed: false
+        }).sort({ startTime: -1 }); // Get the most recent one if multiple
+        
+        // If there's an existing attempt and user didn't explicitly request a new one
+        if (existingAttempt && req.query.forceNew !== 'true') {
+          return res.status(200).json({
+            success: true,
+            data: {
+              hasExistingAttempt: true,
+              existingAttempt: {
+                id: existingAttempt._id,
+                startTime: existingAttempt.startTime,
+                lastUpdated: existingAttempt.updatedAt,
+                // Calculate how far they've progressed
+                questionsAnswered: existingAttempt.questions.filter(q => 
+                  q.userAnswers && q.userAnswers.length > 0
+                ).length,
+                totalQuestions: existingAttempt.questions.length,
+                timeSpent: existingAttempt.timeSpent || 0
+              }
+            }
+          });
+        }
+
+
+        return res.status(200).json({
+          success: true,
+          data: {
+            hasExistingAttempt: false
+          }
+        });
+    
+    
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to check exam attempt',
+      data: null
+    });
+  }
+}
 
 /**
  * Submit exam answers via AJAX
@@ -544,21 +603,30 @@ exports.examResults = async (req, res) => {
  */
 exports.resumeExam = async (req, res) => {
   try {
+    const attemptId = req.params.attemptId;
+    req.user = await User.findById('67c404114d7db32d2f7e80c9');
+    
+    // Find the existing incomplete attempt
     const attempt = await Attempt.findOne({
-      _id: req.params.attemptId,
+      _id: attemptId,
       userId: req.user._id,
       completed: false
     });
     
     if (!attempt) {
-      req.flash('error_msg', 'No incomplete exam found or unauthorized');
-      return res.redirect('/exams/select');
+      return res.status(404).json({
+        success: false,
+        message: 'No incomplete exam found or unauthorized'
+      });
     }
     
+    // Get the exam and certification
     const exam = await Exam.findById(attempt.examId);
     if (!exam) {
-      req.flash('error_msg', 'Exam not found');
-      return res.redirect('/exams/select');
+      return res.status(404).json({
+        success: false,
+        message: 'Exam not found'
+      });
     }
     
     const certification = await Certification.findById(exam.certificationId);
@@ -567,47 +635,109 @@ exports.resumeExam = async (req, res) => {
     const questionIds = attempt.questions.map(q => q.questionId);
     const questions = await Question.find({ _id: { $in: questionIds } });
     
-    // Format questions for the frontend (don't include correct answers!)
+    if (!questions || questions.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to retrieve exam questions'
+      });
+    }
+    
+    // Format questions for frontend (exclude correct answers)
     const formattedQuestions = questions.map(q => ({
       id: q._id,
       text: q.text,
-      options: q.options,
+      options: q.options.map(opt => ({
+        id: opt._id || opt.id,
+        text: opt.text
+      })),
       domain: q.domain
     }));
     
-    // Calculate remaining time
-    const timeLimit = exam.timeLimit || certification.timeLimit;
-    const elapsedSeconds = Math.floor((new Date() - attempt.startTime) / 1000);
-    const remainingSeconds = Math.max(0, timeLimit * 60 - elapsedSeconds);
+    // Create answers object from attempt
+    const answers = {};
+    const timeSpent = {};
+    const flagged = [];
     
-    res.render('exams/resumeExam', {
-      title: `Resume ${exam.name}`,
-      exam: {
-        ...exam.toObject(),
-        remainingSeconds
-      },
-      certification,
-      attempt: attempt._id,
+    attempt.questions.forEach((q, index) => {
+      // Map answers, using index as key for consistency with frontend
+      if (q.userAnswers && q.userAnswers.length > 0) {
+        // If there's only one answer, store it directly
+        // Otherwise store as array to support multiple answers
+        answers[index] = q.userAnswers.length === 1 ? q.userAnswers[0] : q.userAnswers;
+      }
+      
+      // Track time spent per question
+      if (q.timeSpent) {
+        timeSpent[index] = q.timeSpent;
+      }
+      
+      // Track flagged questions
+      if (q.flagged) {
+        flagged.push(index);
+      }
+    });
+    
+    // Get time limit from exam or certification
+    const timeLimit = exam.timeLimit || certification.timeLimit;
+    
+    // Calculate time remaining (in seconds)
+    let remainingTime = timeLimit * 60;
+    if (attempt.timeSpent) {
+      remainingTime = Math.max(0, timeLimit * 60 - attempt.timeSpent);
+    }
+    
+    // Determine current question index (default to 0 if not stored)
+    const currentQuestionIndex = attempt.currentQuestionIndex || 0;
+    
+    // Construct response matching ExamData interface
+    const examData = {
+      id: attempt._id.toString(),
+      timeLimit: remainingTime, // Return remaining time rather than full time
       questions: formattedQuestions,
       proctorEnabled: req.user.settings?.proctorEnabled !== false,
-      userAnswers: attempt.questions.reduce((acc, q) => {
-        acc[q.questionId] = q.userAnswers;
-        return acc;
-      }, {}),
-      flaggedQuestions: attempt.questions
-        .filter(q => q.flagged)
-        .map(q => q.questionId)
+      answers: answers,
+      timeSpent: timeSpent,
+      flagged: flagged,
+      currentQuestionIndex: currentQuestionIndex,
+      startTime: attempt.startTime.getTime(),
+      endTime: null,
+      proctorEvents: attempt.proctorEvents || [],
+      
+      // Additional metadata
+      metadata: {
+        examName: exam.name,
+        certificationName: certification.name,
+        totalQuestions: formattedQuestions.length,
+        allowReview: exam.allowReview !== false,
+        randomizeQuestions: exam.randomize === true,
+        isResumed: true // Flag to indicate this is a resumed session
+      }
+    };
+    
+    // Update the attempt's last activity time
+    attempt.updatedAt = new Date();
+    await attempt.save();
+    
+    return res.status(200).json({
+      success: true,
+      data: examData
     });
+    
   } catch (err) {
     console.error('Error resuming exam:', err);
-    req.flash('error_msg', 'Failed to resume exam');
-    res.redirect('/exams/select');
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to resume exam',
+      data: null
+    });
   }
 };
 
 exports.saveProgress = async (req, res) => {
   const { answers, timeSpent, flagged } = req.body;
   try {
+    req.user = await User.findById('67c404114d7db32d2f7e80c9');
+    
     const attempt = await Attempt.findOne({
       _id: req.params.attemptId,
       userId: req.user._id,
@@ -622,41 +752,70 @@ exports.saveProgress = async (req, res) => {
       });
     }
     
+    // Track if there were any meaningful changes
+    let hasChanges = false;
+    
     // Update the questions array with the progress data
     attempt.questions.forEach((question, index) => {
-      // Update user answers if they exist for this question
+      // Only update user answers if they exist and are different from existing ones
       if (answers[index] !== undefined) {
-        question.userAnswers = Array.isArray(answers[index]) 
-          ? answers[index] 
-          : [answers[index]]; // Ensure userAnswers is always an array
+        const newAnswers = Array.isArray(answers[index]) 
+          ? answers[index]
+          : [answers[index]];
+          
+        // Check if answers are different (avoiding unnecessary updates)
+        const currentAnswerStr = JSON.stringify(question.userAnswers || []);
+        const newAnswerStr = JSON.stringify(newAnswers);
+        
+        if (currentAnswerStr !== newAnswerStr) {
+          question.userAnswers = newAnswers;
+          hasChanges = true;
+        }
       }
       
-      // Update time spent
-      if (timeSpent[index] !== undefined) {
+      // Update time spent only if different
+      if (timeSpent[index] !== undefined && question.timeSpent !== timeSpent[index]) {
         question.timeSpent = timeSpent[index];
+        hasChanges = true;
       }
       
-      // Update flagged status
-      question.flagged = flagged.includes(index);
-    });
-    
-    // Update timeSpent on the attempt
-    const totalTimeSpent = Object.values(timeSpent).reduce((sum, time) => sum + (time || 0), 0);
-    attempt.timeSpent = totalTimeSpent;
-    
-    // Update lastSavedAt timestamp
-    attempt.updatedAt = new Date();
-    
-    // Save the updated attempt
-    await attempt.save();
-    
-    return res.status(200).json({
-      success: true,
-      message: 'Progress saved successfully',
-      data: {
-        attemptId: attempt._id
+      // Update flagged status only if different
+      const shouldBeFlagged = flagged.includes(index);
+      if (question.flagged !== shouldBeFlagged) {
+        question.flagged = shouldBeFlagged;
+        hasChanges = true;
       }
     });
+    
+    // Only proceed with saving if there were actual changes
+    if (hasChanges) {
+      // Update timeSpent on the attempt
+      const totalTimeSpent = Object.values(timeSpent).reduce((sum, time) => sum + (time || 0), 0);
+      attempt.timeSpent = totalTimeSpent;
+      
+      // Update lastSavedAt timestamp
+      attempt.updatedAt = new Date();
+      
+      // Save the updated attempt
+      await attempt.save();
+      
+      return res.status(200).json({
+        success: true,
+        message: 'Progress saved successfully',
+        data: {
+          attemptId: attempt._id
+        }
+      });
+    } else {
+      // No changes were made, so no need to save
+      return res.status(200).json({
+        success: true,
+        message: 'No changes to save',
+        data: {
+          attemptId: attempt._id
+        }
+      });
+    }
     
   } catch (err) {
     console.error('Error saving exam progress:', err);
@@ -667,7 +826,6 @@ exports.saveProgress = async (req, res) => {
     });
   }
 };
-
 
 async function getRandomQuestions(certificationId, count) {
   return await Question.aggregate([

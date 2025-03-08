@@ -3,8 +3,8 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { environment } from 'proctored_exam/frontend/src/environment/environment';
 import { NotificationService } from './notification.service';
+import { environment } from 'src/environment/environment';
 
 @Injectable({
   providedIn: 'root'

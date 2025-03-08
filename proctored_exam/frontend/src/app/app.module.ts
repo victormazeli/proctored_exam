@@ -39,6 +39,7 @@ import { CreateCertificationModalComponent } from './pages/admin/certification/c
 import { DomainModalComponent } from './pages/admin/certification/domain-modal/domain-modal.component';
 import { ConnectionStatusComponent } from './components/shared/connection-status/connection-status.component';
 import { SaveStatusComponent } from './components/shared/save-status/save-status.component';
+import { ResumeExamDialogComponent } from './pages/exam/resume-exam-dialog/resume-exam-dialog.component';
 
 
 
@@ -84,7 +85,8 @@ const config: SocketIoConfig = {
     CreateCertificationModalComponent,
     DomainModalComponent,
     ConnectionStatusComponent,
-    SaveStatusComponent
+    SaveStatusComponent,
+    ResumeExamDialogComponent
   ],
   imports: [
     BrowserAnimationsModule,
