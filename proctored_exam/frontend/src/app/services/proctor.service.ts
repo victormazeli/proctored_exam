@@ -32,20 +32,31 @@ export class ProctorService {
   private warningSubject = new Subject<string>();
   public warning$ = this.warningSubject.asObservable();
 
-  constructor(private socket: Socket) {}
+  constructor(private socket: Socket) {
+    this.socket = socket.of('/proctor');
+  }
 
   /**
    * Initialize proctoring for an exam attempt
    */
-  async initialize(attemptId: string, examId: string): Promise<void> {
+  async initialize(attemptId: string, videoElement?: HTMLVideoElement): Promise<void> {
+    console.log('Initializing proctoring service for exam', attemptId, 'with video element', !!videoElement);
+    
+    // Store video element reference if provided
+    if (videoElement) {
+      this.videoEl = videoElement;
+    }
+    
     // Load face-api models
     await this.loadFaceApiModels();
     
     // Setup socket connection
-    this.setupSocketConnection(attemptId, examId);
+    this.setupSocketConnection(attemptId);
     
     // Initialize webcam monitoring with face-api
-    this.initializeWebcamMonitoring();
+    await this.initializeWebcamMonitoring();
+    
+    console.log('Proctoring initialization complete, webcam monitoring active');
   }
 
   /**
@@ -82,20 +93,27 @@ export class ProctorService {
   /**
    * Set up socket connection for proctoring
    */
-  private setupSocketConnection(attemptId: string, examId: string): void {
+  private setupSocketConnection(attemptId: string): void {
+    console.log('Setting up socket connection for proctor service', 'Attempt ID:', attemptId);
+    
     // Connect to proctor namespace
     this.socket.connect();
+    
+    console.log('Socket connection status:', this.socket.ioSocket?.connected ? 'Connected' : 'Disconnected');
 
     // Socket connection events
     this.socket.on('connect', () => {
+      console.log('Proctor socket connected successfully');
       this.updateStatus('active', 'Proctoring Active');
       this.reconnectAttempts = 0;
 
       // Join exam room
-      this.socket.emit('join_exam', { attemptId, examId });
+      console.log('Joining exam room with data:', { attemptId  });
+      this.socket.emit('join_exam', { attemptId  });
 
       // Process queued violations
       if (this.queuedViolations.length > 0) {
+        console.log('Processing queued violations:', this.queuedViolations.length);
         this.socket.emit('proctor:violations_batch', this.queuedViolations);
         this.queuedViolations = [];
       }
@@ -141,14 +159,20 @@ export class ProctorService {
    * Initialize webcam monitoring with face-api.js
    */
   private async initializeWebcamMonitoring(): Promise<void> {
-    // Get webcam video element reference
-    this.videoEl = document.querySelector('#proctorWebcam') as HTMLVideoElement;
-    
+    // Check if videoEl is already set from the initialize method
     if (!this.videoEl) {
-      console.error('Webcam video element not found');
-      this.updateStatus('error', 'Webcam element not found');
-      return;
+      // Fallback to query selector if not passed in directly
+      console.log('Looking for webcam element with ID "proctorWebcam"');
+      this.videoEl = document.querySelector('#proctorWebcam') as HTMLVideoElement;
+      
+      if (!this.videoEl) {
+        console.error('Webcam video element not found');
+        this.updateStatus('error', 'Webcam element not found');
+        return;
+      }
     }
+    
+    console.log('Webcam video element found:', !!this.videoEl);
     
     // Ensure we have the webcam stream
     if (!this.videoEl.srcObject) {
@@ -583,6 +607,8 @@ export class ProctorService {
    * Log a proctoring violation
    */
   logViolation(type: string, details: any = {}): void {
+    console.log(`Logging violation: ${type}`, details);
+    
     const violation: ProctorEvent = {
       type,
       time: new Date(),
@@ -593,10 +619,26 @@ export class ProctorService {
     };
 
     if (this.socket.connected) {
+      console.log('Socket connected, emitting violation directly');
       this.socket.emit('proctor:violation', violation);
     } else {
+      console.log('Socket not connected, queuing violation for later');
       this.queuedViolations.push(violation);
+      
+      // Try to reconnect socket if disconnected
+      if (!this.socket.connected) {
+        console.log('Attempting to reconnect socket');
+        this.socket.connect();
+      }
     }
+    
+    // Log to console for debugging
+    console.log('Violation recorded:', {
+      type,
+      time: new Date(),
+      socketConnected: this.socket.connected,
+      queueLength: this.queuedViolations.length
+    });
   }
 
   /**

@@ -47,7 +47,8 @@ import { ResumeExamDialogComponent } from './pages/exam/resume-exam-dialog/resum
 const config: SocketIoConfig = { 
   url: 'http://localhost:3000', // Replace with your backend URL
   options: {
-    transports: ['websocket']
+    transports: ['websocket'],
+    autoConnect: false 
   }
 };
 

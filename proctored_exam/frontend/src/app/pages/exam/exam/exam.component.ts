@@ -795,25 +795,31 @@ private markAsDirty() {
         // Set up webcam stream
         if (this.proctorWebcam?.nativeElement) {
           this.proctorWebcam.nativeElement.srcObject = stream;
-        }
-  
-        // Initialize proctor service
-        this.proctorService.initialize(this.examData.id, this.examData.id);
-  
-        // Subscribe to proctor service events
-        this.setupProctorSubscriptions();
+          await this.proctorWebcam.nativeElement.play();
+          console.log('Webcam stream active, initializing proctor service');
 
-         // Set up visibility monitoring 
-         this.setupVisibilityMonitoring();
-  
-        // Update status
-        this.updateProctorStatus('active', 'Proctoring Active');
-  
-        // Log initialization
-        this.logProctorEvent('proctor_initialized', {
-          webcamActive: true,
-          timestamp: new Date().toISOString()
-        });
+          // Initialize proctor service
+          await this.proctorService.initialize(this.examData.id, this.proctorWebcam.nativeElement);
+    
+          // Subscribe to proctor service events
+          this.setupProctorSubscriptions();
+
+          // Set up visibility monitoring 
+          this.setupVisibilityMonitoring();
+    
+          // Update status
+          this.updateProctorStatus('active', 'Proctoring Active');
+    
+          // Log initialization
+          this.logProctorEvent('proctor_initialized', {
+            webcamActive: true,
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          console.error('Webcam element not available');
+          this.updateProctorStatus('error', 'Webcam element not available');
+        }
+
   
       } catch (error) {
         console.error('Webcam access error:', error);
@@ -834,7 +840,7 @@ private markAsDirty() {
       // Subscribe to proctor status updates
       this.proctorService.status$.subscribe(status => {
         this.proctorStatusText = status.message;
-        this.proctorStatusClass = `status-${status.status}`;
+        this.proctorStatusClass = `${status.status}`;
       });
   
       // Subscribe to proctor warnings
@@ -875,7 +881,7 @@ private markAsDirty() {
      */
     private updateProctorStatus(status: 'active' | 'warning' | 'error', message: string): void {
       this.proctorStatusText = message;
-      this.proctorStatusClass = `status-${status}`;
+      this.proctorStatusClass = `${status}`;
     }
   
     /**

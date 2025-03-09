@@ -17,19 +17,20 @@ function setupSocketHandlers(io, sessionMiddleware, config = {}) {
     const examService = require('./services/examService');
   
     // Share session with Socket.io
-    const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
-    io.use(wrap(sessionMiddleware));
+
+    // const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
+    // io.use(wrap(sessionMiddleware));
   
     // Socket.io authentication middleware
-    io.use((socket, next) => {
-      if (socket.request.session && socket.request.session.passport && socket.request.session.passport.user) {
-        // Store user info on socket for easy access
-        socket.userId = socket.request.session.passport.user;
-        next();
-      } else {
-        next(new Error('Unauthorized socket connection'));
-      }
-    });
+    // io.use((socket, next) => {
+    //   if (socket.request.session && socket.request.session.passport && socket.request.session.passport.user) {
+    //     // Store user info on socket for easy access
+    //     socket.userId = socket.request.session.passport.user;
+    //     next();
+    //   } else {
+    //     next(new Error('Unauthorized socket connection'));
+    //   }
+    // });
   
     // Create namespaces for different purposes
     const proctorNamespace = io.of('/proctor'); // For exam-takers being proctored
@@ -37,20 +38,23 @@ function setupSocketHandlers(io, sessionMiddleware, config = {}) {
   
     // Apply authentication to namespaces
     proctorNamespace.use((socket, next) => {
-      if (socket.request.session && socket.request.session.passport && socket.request.session.passport.user) {
-        socket.userId = socket.request.session.passport.user;
-        next();
-      } else {
-        next(new Error('Unauthorized'));
-      }
+      socket.userId = '67c404114d7db32d2f7e80c9';
+      next();
+      // if (socket.request.session && socket.request.session.passport && socket.request.session.passport.user) {
+      //   socket.userId = socket.request.session.passport.user;
+      //   socket.userId = '67c404114d7db32d2f7e80c9';
+      //   next();
+      // } else {
+      //   next(new Error('Unauthorized'));
+      // }
     });
   
     // Apply stricter authentication for monitors (proctors/admins)
     monitorNamespace.use(async (socket, next) => {
       try {
-        if (!socket.request.session || !socket.request.session.passport || !socket.request.session.passport.user) {
-          return next(new Error('Unauthorized'));
-        }
+        // if (!socket.request.session || !socket.request.session.passport || !socket.request.session.passport.user) {
+        //   return next(new Error('Unauthorized'));
+        // }
         
         // Check if user has proctor/admin role
         const User = require('./models/user');
@@ -76,7 +80,7 @@ function setupSocketHandlers(io, sessionMiddleware, config = {}) {
       // Join exam attempt room when exam starts
       socket.on('join_exam', async (data) => {
         try {
-          const { attemptId, examId } = data;
+          const { attemptId  } = data;
           
           // Validate the attempt belongs to this user
           const Attempt = require('./models/attempt');
@@ -97,7 +101,6 @@ function setupSocketHandlers(io, sessionMiddleware, config = {}) {
           // Store exam data on socket for easier access
           socket.examData = {
             attemptId,
-            examId,
             startTime: attempt.startTime
           };
           
