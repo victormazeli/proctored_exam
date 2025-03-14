@@ -15,7 +15,7 @@ export class AdminService {
   constructor(private http: HttpClient, private notificationService: NotificationService) {}
 
   getDashboardStats(): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/dashboard-stats`)
+    return this.http.get<any>(`${this.apiUrl}/dashboard`)
       .pipe(
         catchError(this.handleError('getDashboardStats', {
           stats: {
@@ -23,10 +23,12 @@ export class AdminService {
             certificationCount: 0,
             examCount: 0,
             attemptCount: 0,
+            questionCount: 0,
             lastWeekAttempts: 0
           },
           recentAttempts: [],
-          certPassRates: []
+          certPassRates: [],
+          totalAttemptsCount: 0
         }))
       );
   }
@@ -381,6 +383,63 @@ export class AdminService {
         catchError(this.handleError('clearCache', { success: false }))
       );
   }
+
+
+
+    /**
+     * Get filtered exam attempts with pagination
+     */
+    getFilteredAttempts(searchTerm: string, page: number, limit: number): Observable<any> {
+      let params = new HttpParams()
+        .set('page', page.toString())
+        .set('limit', limit.toString());
+      
+      if (searchTerm) {
+        params = params.set('search', searchTerm);
+      }
+      
+      return this.http.get(`${this.apiUrl}/admin/attempts`, { params });
+    }
+  
+    /**
+     * Get certification pass rates
+     */
+    getCertificationPassRates(days: number = 30): Observable<any> {
+      return this.http.get(`${this.apiUrl}/admin/analytics/certifications/pass-rates?days=${days}`);
+    }
+  
+    /**
+     * Get specific exam attempt details
+     */
+    getExamAttempt(attemptId: string): Observable<any> {
+      return this.http.get(`${this.apiUrl}/admin/attempts/${attemptId}`);
+    }
+  
+    /**
+     * Get questions by certification
+     */
+    getQuestionsByCertification(certId: string, page: number = 1, limit: number = 20): Observable<any> {
+      let params = new HttpParams()
+        .set('page', page.toString())
+        .set('limit', limit.toString());
+      
+      return this.http.get(`${this.apiUrl}/admin/certifications/${certId}/questions`, { params });
+    }
+  
+    /**
+     * Create new exam
+     */
+    createExam(examData: any): Observable<any> {
+      return this.http.post(`${this.apiUrl}/admin/exams`, examData);
+    }
+  
+    /**
+     * Create new question
+     */
+    createQuestion(questionData: any): Observable<any> {
+      return this.http.post(`${this.apiUrl}/admin/questions`, questionData);
+    }
+  
 
   // Generic error handler
   private handleError<T>(operation = 'operation', result?: T) {

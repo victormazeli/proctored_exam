@@ -1,9 +1,5 @@
-
-// app.js - Main Application Entry Point
 const express = require('express');
 const mongoose = require('mongoose');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const path = require('path');
 const passport = require('passport');
 const morgan = require('morgan');
@@ -21,12 +17,10 @@ const authRoutes = require('./routes/auth');
 const examRoutes = require('./routes/exams');
 const questionRoutes = require('./routes/questions');
 const adminRoutes = require('./routes/admin');
-// const analyticsRoutes = require('./routes/analytics');
 const proctorRoutes = require('./routes/proctor');
 
 // Import middleware
-const { isAuthenticated } = require('./middleware/auth');
-const { trackAnalytics } = require('./middleware/analytics');
+const { authenticateJWT } = require('./middleware/auth');
 
 // Import socket handlers
 const setupSocketHandlers = require('./socket-handlers');
@@ -34,7 +28,13 @@ const setupSocketHandlers = require('./socket-handlers');
 // Initialize Express app
 const app = express();
 const server = createServer(app);
-const io = socketio(server);
+const io = socketio(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || '*',
+    methods: ['GET', 'POST'],
+    credentials: false
+  }
+});
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI, {
@@ -44,7 +44,11 @@ mongoose.connect(process.env.MONGODB_URI, {
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-app.use(cors());
+// CORS setup
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: false
+}));
 
 // Configure middleware
 app.use(helmet({
@@ -64,62 +68,24 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Session configuration
-const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({ 
-    mongoUrl: process.env.MONGODB_URI,
-    collection: 'sessions'
-  }),
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24, // 1 day
-    secure: process.env.NODE_ENV === 'production'
-  }
-});
-
-app.use(sessionMiddleware);
-
-// Passport middleware
+// Initialize Passport for JWT only (no sessions)
 app.use(passport.initialize());
-app.use(passport.session());
 require('./config/passport')(passport);
-
-// Flash messages
-// app.use(flash());
-
-// // Global variables
-// app.use((req, res, next) => {
-//   res.locals.user = req.user || null;
-//   res.locals.success_msg = req.flash('success_msg');
-//   res.locals.error_msg = req.flash('error_msg');
-//   res.locals.error = req.flash('error');
-//   next();
-// });
-
-// Analytics tracking
-// app.use(trackAnalytics);
-
-// View engine setup
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/exams', examRoutes);
-app.use('/api/admin/questions', questionRoutes);
-app.use('/api/admin', adminRoutes);
-// app.use('/analytics', analyticsRoutes);
-app.use('/proctor', proctorRoutes);
+app.use('/api/exams', authenticateJWT, examRoutes);
+app.use('/api/admin/questions', authenticateJWT, questionRoutes);
+app.use('/api/admin', authenticateJWT, adminRoutes);
+app.use('/proctor', authenticateJWT, proctorRoutes);
 
 // Home route
 app.get('/api/ping', (req, res) => {
   return res.status(200).send("ok")
 });
 
-// Initialize Socket.io handlers with configuration
-setupSocketHandlers(io, sessionMiddleware, {
+// Initialize Socket.io handlers with JWT auth
+setupSocketHandlers(io, null, {
   autoDisconnectMinutes: 15,
   cleanupIntervalMinutes: 5,
   maxRecentEvents: 100
@@ -133,6 +99,7 @@ app.use((req, res, next) => {
   })
 });
 
+
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -141,6 +108,5 @@ app.use((err, req, res, next) => {
     message: 'Internal Server Error'
   })
 });
-
 
 module.exports = { app, server, io };

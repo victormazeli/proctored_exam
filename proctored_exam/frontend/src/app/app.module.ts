@@ -18,11 +18,10 @@ import { SubmitModalComponent } from './components/shared/submit-modal/submit-mo
 import { ExamService } from './services/exam.service';
 import { ProctorService } from './services/proctor.service';
 import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { WebCamPermissionModalComponent } from './components/shared/webcam-permission-modal/webcam-permission-modal.component';
 import { ExamInstructionsComponent } from './pages/exam/exam-instructions/exam-instructions.component';
 import { ExamResultsComponent } from './pages/exam/exam-results/exam-results.component';
-import { AuthComponent } from './pages/admin/auth/auth.component';
 import { DashboardComponent } from './pages/admin/dashboard/dashboard.component';
 import { AdminUsersComponent } from './pages/admin/users/users.component';
 import { AdminCertificationsComponent  } from './pages/admin/certification/certification.component';
@@ -40,8 +39,14 @@ import { DomainModalComponent } from './pages/admin/certification/domain-modal/d
 import { ConnectionStatusComponent } from './components/shared/connection-status/connection-status.component';
 import { SaveStatusComponent } from './components/shared/save-status/save-status.component';
 import { ResumeExamDialogComponent } from './pages/exam/resume-exam-dialog/resume-exam-dialog.component';
+import { AdminLoginComponent } from './pages/admin/auth/auth.component';
+import { AuthInterceptor } from './auth-interceptor.interceptor';
+import { AuthService } from './services/auth.service';
 
 
+const getToken = () => {
+  return localStorage.getItem('token');
+};
 
 // Configure Socket.io with your backend URL
 const config: SocketIoConfig = { 
@@ -71,7 +76,6 @@ const config: SocketIoConfig = {
     WebCamPermissionModalComponent,
     ExamInstructionsComponent,
     ExamResultsComponent,
-    AuthComponent,
     DashboardComponent,
     AdminCertificationsComponent,
     AdminQuestionsComponent,
@@ -87,12 +91,14 @@ const config: SocketIoConfig = {
     DomainModalComponent,
     ConnectionStatusComponent,
     SaveStatusComponent,
-    ResumeExamDialogComponent
+    ResumeExamDialogComponent,
+    AdminLoginComponent
   ],
   imports: [
     BrowserAnimationsModule,
     BrowserModule,
     CommonModule,
+    ReactiveFormsModule,
     FormsModule,
     ReactiveFormsModule,
     AppRoutingModule,
@@ -101,7 +107,9 @@ const config: SocketIoConfig = {
   ],
   providers: [
     ExamService,
-    ProctorService
+    ProctorService,
+    AuthService,
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
   ],
   bootstrap: [AppComponent]
 })

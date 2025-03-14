@@ -5,9 +5,12 @@ export interface ExistingAttempt {
   id: string;
   startTime: Date;
   lastUpdated: Date;
+  completed: boolean;
   questionsAnswered: number;
   totalQuestions: number;
   timeSpent: number;
+  score: number;
+  passed: boolean;
 }
 
 @Component({
@@ -21,6 +24,7 @@ export class ResumeExamDialogComponent implements OnInit {
   
   @Output() resume = new EventEmitter<string>();
   @Output() startNew = new EventEmitter<void>();
+  @Output() viewResults = new EventEmitter<string>();
   @Output() cancel = new EventEmitter<void>();
   
   timeAgo: string = '';
@@ -92,6 +96,12 @@ formatTime(seconds: number): string {
     return `${hours}h ${minutes}m`;
   } else {
     return `${minutes} minutes`;
+  }
+}
+
+onViewResultsClicked(): void {
+  if (this.existingAttempt) {
+    this.viewResults.emit(this.existingAttempt.id);
   }
 }
 }

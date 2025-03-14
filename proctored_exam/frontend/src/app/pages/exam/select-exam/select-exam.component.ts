@@ -214,6 +214,6 @@ export class SelectExamComponent implements OnInit {
   
   // Start the selected exam
   goToExamInstructions(examId: string): void {
-    this.router.navigate(['/exams', examId, 'instructions']);
+    this.router.navigate(['/portal/exams', examId, 'instructions']);
   }
 }

@@ -1,86 +1,97 @@
-const passport = require('passport');
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 
 /**
- * middleware/auth.js - Authentication and Role-based Access Middleware
+ * Middleware to authenticate JWT tokens
  */
-
-/**
- * Ensures the user is authenticated before accessing a route
- * Redirects to login if not authenticated
- */
-const isAuthenticated = (req, res, next) => {
-    if (req.isAuthenticated()) {
-      return next();
+exports.authenticateJWT = async (req, res, next) => {
+  try {
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
+        success: false,
+        message: 'Access denied. No token provided.',
+        data: null
+      });
     }
-    req.flash('error_msg', 'Please log in to access this resource');
-    res.redirect('/auth/login');
-  };
-  
-  /**
-   * Ensures the user is not authenticated (for login/register pages)
-   * Redirects to dashboard if already authenticated
-   */
-  const isNotAuthenticated = (req, res, next) => {
-    if (!req.isAuthenticated()) {
-      return next();
+    
+    const token = authHeader.split(' ')[1];
+    
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Find user
+    const user = await User.findById(decoded.id).select('-password');
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token or inactive user',
+        data: null
+      });
     }
-    res.redirect('/exams/select');
-  };
-  
-  /**
-   * Checks if the user has admin role
-   * Returns 403 Forbidden if not an admin
-   */
-  const isAdmin = (req, res, next) => {
-    if (req.isAuthenticated() && req.user.role === 'admin') {
-      return next();
+    
+    // Add user to request object
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error('JWT Authentication error:', error);
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token expired',
+        data: null
+      });
     }
-    res.status(403).render('errors/403', {
-      title: '403 - Access Forbidden',
-      message: 'You do not have permission to access this resource'
+    
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token',
+      data: null
     });
+  }
+};
+
+/**
+ * Middleware to check for specific user roles
+ * @param {Array} roles - Array of allowed roles
+ */
+exports.authorizeRoles = (roles) => {
+  return (req, res, next) => {
+    if (!req.user || !roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Insufficient permissions.',
+        data: null
+      });
+    }
+    next();
   };
+};
+
+// Legacy isAuthenticated function for backward compatibility
+exports.isAuthenticated = exports.authenticateJWT;
   
   /**
-   * Factory function to create role-based middleware
-   * @param {string|string[]} roles - Single role or array of allowed roles
-   * @returns {function} Middleware function
+   *  roles - Single role or array of allowed roles
    */
-  const hasRole = (roles) => {
+  exports.hasRole = (roles) => {
     return (req, res, next) => {
       // Convert single role to array for consistent handling
       const allowedRoles = Array.isArray(roles) ? roles : [roles];
       
-      if (req.isAuthenticated() && allowedRoles.includes(req.user.role)) {
+      if (allowedRoles.includes(req.user.role)) {
         return next();
       }
       
-      res.status(403).render('errors/403', {
-        title: '403 - Access Forbidden',
-        message: 'You do not have permission to access this resource'
+      res.status(403).json({
+        success: false,
+        message: 'You do not have permission to access this resource',
+        data: null
       });
     };
   };
 
- const authenticateJwt = (req, res, next) => {
-    passport.authenticate('jwt', { session: false }, (err, user, info) => {
-      if (err) return next(err);
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: info.message || 'Invalid token'
-        });
-      }
-      
-      req.user = user;
-      next();
-    })(req, res, next);
-  };
-  
-  module.exports = {
-    isAuthenticated,
-    isNotAuthenticated,
-    isAdmin,
-    hasRole,
-    authenticateJwt
-  };

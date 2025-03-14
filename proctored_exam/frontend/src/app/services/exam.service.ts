@@ -49,7 +49,7 @@ export class ExamService {
    * Save exam progress
    */
   saveProgress(attemptId: string, data: any): Observable<any> {
-    return this.http.post<void>(`${this.API_URL}/${attemptId}/progress`, data).pipe(
+    return this.http.post<void>(`${this.API_URL}/attempts/${attemptId}/progress`, data).pipe(
       retry(1),
       catchError(this.handleError("saveProgress", {}))
     )
@@ -59,7 +59,7 @@ export class ExamService {
    * Check Exam Attempt
    */
     checkPreviousAttempt(examId: string): Observable<any> {
-      return this.http.get<void>(`${this.API_URL}/check/attempt/${examId}`).pipe(
+      return this.http.get<void>(`${this.API_URL}/attempts/check/${examId}`).pipe(
         catchError(this.handleError("CheckPreviousAttempt", {}))
       )
     }
@@ -77,11 +77,20 @@ export class ExamService {
    * Submit exam
    */
     resumeExam(attemptId: any): Observable<any> {
-      return this.http.get<any>(`${this.API_URL}/${attemptId}/resume`).pipe(
+      return this.http.get<any>(`${this.API_URL}/attempts/${attemptId}/resume`).pipe(
         catchError(this.handleError("resumeExam", {}))
       )
     }
   
+     /**
+   * Get exam results by attempt ID
+   */
+  getExamResults(attemptId: string): Observable<any> {
+    return this.http.get(`${this.API_URL}/attempts/${attemptId}/results`)
+      .pipe(
+        catchError(this.handleError("getExamResults", {}))
+      );
+  }
 
   /**
    * Get proctor configuration

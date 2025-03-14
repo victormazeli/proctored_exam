@@ -1,6 +1,6 @@
-// exam-results.component.ts
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { ExamService } from 'src/app/services/exam.service';
 
 interface DomainScore {
   domain: string;
@@ -47,6 +47,17 @@ interface Recommendation {
   practiceStrategy: string[];
 }
 
+interface ProctorSummary {
+  totalEvents: number;
+  violationCount: number;
+  severityScore: number;
+  potentialCheating: boolean;
+  summary: string;
+  flaggedBehaviors?: string[];
+  eventCategories: Record<string, number>;
+  timeline: any[];
+}
+
 @Component({
   selector: 'app-exam-results',
   templateUrl: './exam-results.component.html'
@@ -55,70 +66,90 @@ export class ExamResultsComponent implements OnInit {
   // Expose Math to template
   Math = Math;
 
-  // Mock data (in a real app, this would come from a service)
-  exam: any = {
-    _id: '1',
-    name: 'AWS Solutions Architect Associate Practice Exam'
-  };
-
-  certification: any = {
-    _id: '1',
-    name: 'AWS Certified Solutions Architect - Associate',
-    code: 'SAA-C03',
-    passingScore: 72
-  };
-
+  // Data properties
+  exam: any = {};
+  certification: any = {};
   attempt: ExamAttempt = {
-    _id: '1',
-    examId: '1',
-    userId: 'user1',
-    startTime: new Date(new Date().getTime() - 60 * 60 * 1000),
+    _id: '',
+    examId: '',
+    userId: '',
+    startTime: new Date(),
     endTime: new Date(),
-    timeSpent: 3450, // 57.5 minutes
+    timeSpent: 0,
     score: {
-      overall: 76.5,
-      byDomain: [
-        { domain: "Design Resilient Architectures", score: 85, questionsCount: 14 },
-        { domain: "Design High-Performance Architectures", score: 70, questionsCount: 12 },
-        { domain: "Design Secure Applications and Architectures", score: 90, questionsCount: 15 },
-        { domain: "Design Cost-Optimized Architectures", score: 65, questionsCount: 10 }
-      ]
+      overall: 0,
+      byDomain: []
     },
-    passed: true,
-    questions: [] // We'll populate this below
+    passed: false,
+    questions: []
   };
-
   recommendations: Recommendation = {
-    weakDomains: ['Design High-Performance Architectures', 'Design Cost-Optimized Architectures'],
-    studyRecommendations: [
-      'Review EC2 instance types and their performance characteristics',
-      'Study Amazon RDS performance optimization strategies',
-      'Learn more about S3 storage classes and their cost implications',
-      'Focus on understanding auto-scaling configurations for cost optimization'
-    ],
-    practiceStrategy: [
-      'Attempt focused practice tests on high-performance architectures',
-      'Complete hands-on labs related to cost optimization',
-      'Review past wrong answers in these domains'
-    ]
+    weakDomains: [],
+    studyRecommendations: [],
+    practiceStrategy: []
   };
+  proctorSummary: ProctorSummary | null = null;
 
   // UI state
   questionFilter: string = 'all';
   expandedQuestions: Set<number> = new Set();
+  loading: boolean = true;
+  error: string | null = null;
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router
-  ) {
-    // Generate mock questions data
-    this.generateMockQuestions();
-  }
+    private router: Router,
+    private examService: ExamService
+  ) {}
 
   ngOnInit(): void {
-    // In a real app, you would fetch the data based on the route params
-    // const attemptId = this.route.snapshot.paramMap.get('id');
-    // this.loadAttemptData(attemptId);
+    this.route.paramMap.subscribe(params => {
+      const attemptId = params.get('attemptId');
+      if (attemptId) {
+        this.loadExamResults(attemptId);
+      } else {
+        this.error = 'No attempt ID provided';
+        this.loading = false;
+      }
+    });
+  }
+
+  loadExamResults(attemptId: string): void {
+    this.loading = true;
+    this.error = null;
+
+    this.examService.getExamResults(attemptId).subscribe({
+      next: (response) => {
+        // Assign data from API response
+        this.exam = response.data.exam;
+        this.certification = response.data.certification;
+        
+        // Format dates as Date objects
+        const attempt = {
+          ...response.data.attempt,
+          startTime: new Date(response.data.attempt.startTime),
+          endTime: new Date(response.data.attempt.endTime)
+        };
+        this.attempt = attempt;
+        
+        // Assign recommendations
+        this.recommendations = response.data.recommendations || {
+          weakDomains: [],
+          studyRecommendations: [],
+          practiceStrategy: []
+        };
+        
+        // Assign proctor summary if available
+        this.proctorSummary = response.data.proctorSummary || null;
+        
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading exam results:', err);
+        this.error = 'Failed to load exam results. Please try again.';
+        this.loading = false;
+      }
+    });
   }
 
   // Helper methods
@@ -191,48 +222,15 @@ export class ExamResultsComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/exams', this.certification._id, 'select']);
+    this.router.navigate(['/portal/exams/select']);
   }
+
+  objectKeys(obj: any): string[] {
+    return Object.keys(obj);
+  }
+  
 
   viewAnalysis(): void {
     this.router.navigate(['/analytics/attempt', this.attempt._id]);
-  }
-
-  // Mock data generation
-  private generateMockQuestions(): void {
-    // Generate 20 mock questions
-    const domains = this.attempt.score.byDomain.map(d => d.domain);
-    
-    this.attempt.questions = Array(20).fill(null).map((_, i) => {
-      const correct = Math.random() > 0.3; // 70% chance of being correct
-      const flagged = Math.random() > 0.8; // 20% chance of being flagged
-      const difficulty = Math.floor(Math.random() * 5) + 1;
-      const domain = domains[Math.floor(Math.random() * domains.length)];
-      const options = this.generateOptions(i + 1);
-      const correctAnswers = [options[0].id]; // First option is always correct for mock data
-      const userAnswers = correct ? [...correctAnswers] : [options[1].id]; // If correct, user selected correct answer
-      
-      return {
-        id: `q${i + 1}`,
-        text: `This is a sample question ${i + 1} related to ${domain}. What is the correct approach?`,
-        options,
-        userAnswers,
-        correctAnswers,
-        correct,
-        flagged,
-        timeSpent: Math.floor(Math.random() * 120) + 10, // 10-130 seconds
-        domain,
-        difficulty,
-        tags: ['EC2', 'S3', 'VPC'].slice(0, Math.floor(Math.random() * 3) + 1),
-        explanation: Math.random() > 0.2 ? `This is an explanation for question ${i + 1}. The correct answer is based on AWS best practices.` : ''
-      };
-    });
-  }
-
-  private generateOptions(questionNum: number): any[] {
-    return Array(4).fill(null).map((_, i) => ({
-      id: `q${questionNum}_opt${i + 1}`,
-      text: `Option ${i + 1} for question ${questionNum}`
-    }));
   }
 }

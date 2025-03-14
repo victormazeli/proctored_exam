@@ -576,5 +576,5 @@ function calculateEstimatedImprovementTime(weakDomainsCount, weakTopicsCount) {
   const perDomainHours = 5;
   const perTopicHours = 2;
   
-  return baseHours + (weakDomainsCount * perDomainHours) + (weakTopicHours * perTopicHours);
+  return baseHours + (weakDomainsCount * perDomainHours) + (weakTopicsCount * perTopicHours);
 }

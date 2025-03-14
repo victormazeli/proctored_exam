@@ -1,5 +1,5 @@
-// socket-handlers.js - Socket.io implementation using existing proctorService functions
-
+const jwt = require('jsonwebtoken');
+const User = require('./models/user');
 /**
  * Setup Socket.io handlers for proctoring system
  * @param {Object} io - Socket.io instance
@@ -16,60 +16,69 @@ function setupSocketHandlers(io, sessionMiddleware, config = {}) {
     const proctorService = require('./services/proctorService');
     const examService = require('./services/examService');
   
-    // Share session with Socket.io
-
-    // const wrap = middleware => (socket, next) => middleware(socket.request, {}, next);
-    // io.use(wrap(sessionMiddleware));
-  
-    // Socket.io authentication middleware
-    // io.use((socket, next) => {
-    //   if (socket.request.session && socket.request.session.passport && socket.request.session.passport.user) {
-    //     // Store user info on socket for easy access
-    //     socket.userId = socket.request.session.passport.user;
-    //     next();
-    //   } else {
-    //     next(new Error('Unauthorized socket connection'));
-    //   }
-    // });
-  
     // Create namespaces for different purposes
     const proctorNamespace = io.of('/proctor'); // For exam-takers being proctored
     const monitorNamespace = io.of('/proctor-monitor'); // For proctors/admins monitoring exams
   
     // Apply authentication to namespaces
-    proctorNamespace.use((socket, next) => {
-      socket.userId = '67c404114d7db32d2f7e80c9';
-      next();
-      // if (socket.request.session && socket.request.session.passport && socket.request.session.passport.user) {
-      //   socket.userId = socket.request.session.passport.user;
-      //   socket.userId = '67c404114d7db32d2f7e80c9';
-      //   next();
-      // } else {
-      //   next(new Error('Unauthorized'));
-      // }
+    proctorNamespace.use(async (socket, next) => {
+      try {
+        // Get token from socket handshake auth or query params
+        const token = socket.handshake.auth.token || socket.handshake.query.token;
+        
+        if (!token) {
+          return next(new Error('Authentication token required'));
+        }
+        
+        // Verify JWT token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'kjhruht588u659u6957u9u');
+        
+        // Fetch user from database
+        const user = await User.findById(decoded.id);
+        
+        if (!user || !user.active) {
+          return next(new Error('User not found or inactive'));
+        }
+        
+        // Attach user info to socket
+        socket.userId = user._id;
+        socket.userRole = user.role;
+        next();
+      } catch (error) {
+        console.error('Socket authentication error:', error);
+        next(new Error('Authentication failed'));
+      }
     });
+  
   
     // Apply stricter authentication for monitors (proctors/admins)
     monitorNamespace.use(async (socket, next) => {
       try {
-        // if (!socket.request.session || !socket.request.session.passport || !socket.request.session.passport.user) {
-        //   return next(new Error('Unauthorized'));
-        // }
+        // Get token from socket handshake
+        const token = socket.handshake.auth.token || socket.handshake.query.token;
         
-        // Check if user has proctor/admin role
-        const User = require('./models/user');
-        const user = await User.findById(socket.request.session.passport.user);
+        if (!token) {
+          return next(new Error('Authentication token required'));
+        }
         
+        // Verify JWT token
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        // Fetch user from database
+        const user = await User.findById(decoded.id);
+        
+        // Check for proper role
         if (!user || !['admin', 'proctor', 'instructor'].includes(user.role)) {
           return next(new Error('Insufficient permissions'));
         }
         
+        // Attach user info to socket
         socket.userId = user._id;
         socket.userRole = user.role;
         next();
       } catch (error) {
         console.error('Monitor authentication error:', error);
-        next(new Error('Authentication error'));
+        next(new Error('Authentication failed'));
       }
     });
   

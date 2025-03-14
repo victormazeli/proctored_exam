@@ -192,7 +192,7 @@ export class ExamComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Failed to initialize exam:', error);
         this.notificationService.showError('Failed to initialize exam');
-        this.router.navigate(['/exams/select']);
+        this.router.navigate(['/portal/exams/select']);
       }
     });
   }
@@ -213,7 +213,7 @@ export class ExamComponent implements OnInit, OnDestroy {
       error: (error) => {
         console.error('Failed to resume exam:', error);
         this.notificationService.showError('Failed to resume exam');
-        this.router.navigate(['/exams/select']);
+        this.router.navigate(['/portal/exams/select']);
       }
     });
   }
@@ -688,7 +688,7 @@ private markAsDirty() {
     this.examService.submitExam(submissionData).subscribe({
       next: (result) => {
         if (result?.success) {
-          this.router.navigate(['/exams/results', result.attemptId]);
+          this.router.navigate(['/portal/exams/results', result.attemptId]);
         } else {
           console.error('Failed to submit exam:', result?.message);
         }

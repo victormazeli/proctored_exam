@@ -1,70 +1,122 @@
 <!-- resume-exam-dialog.component.html -->
 <div *ngIf="visible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div class="w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden">
-      <!-- Header -->
-      <div class="bg-blue-600 text-white px-6 py-4">
-        <h2 class="text-lg font-semibold">Resume Exam Session</h2>
+  <div class="w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden">
+    <!-- Header - Different colors for completed vs incomplete exams -->
+    <div [ngClass]="existingAttempt?.completed ? 'bg-green-600' : 'bg-blue-600'" class="text-white px-6 py-4">
+      <h2 class="text-lg font-semibold">
+        {{ existingAttempt?.completed ? 'Exam Already Completed' : 'Resume Exam Session' }}
+      </h2>
+    </div>
+    
+    <!-- Content -->
+    <div class="p-6">
+      <div class="mb-6">
+        <p class="text-gray-700 mb-1">
+          {{ existingAttempt?.completed ? 'You have already completed:' : 'You have an incomplete exam session for:' }}
+        </p>
+        <p class="text-lg font-medium text-gray-900">{{ examName }}</p>
       </div>
       
-      <!-- Content -->
-      <div class="p-6">
-        <div class="mb-6">
-          <p class="text-gray-700 mb-1">You have an incomplete exam session for:</p>
-          <p class="text-lg font-medium text-gray-900">{{ examName }}</p>
+      <!-- Attempt details -->
+      <div class="bg-gray-50 rounded-lg p-4 mb-6">
+        <!-- Last active time -->
+        <div class="flex justify-between mb-2">
+          <span class="text-sm text-gray-500">
+            {{ existingAttempt?.completed ? 'Completed:' : 'Last active:' }}
+          </span>
+          <span class="text-sm font-medium text-gray-700">{{ timeAgo }}</span>
         </div>
         
-        <div class="bg-gray-50 rounded-lg p-4 mb-6">
-          <div class="flex justify-between mb-2">
-            <span class="text-sm text-gray-500">Last active:</span>
-            <span class="text-sm font-medium text-gray-700">{{ timeAgo }}</span>
+        <!-- Show score for completed exams -->
+        <div *ngIf="existingAttempt?.completed" class="mb-3">
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-500">Score:</span>
+            <span class="text-gray-700 font-medium">
+              {{ existingAttempt?.score || 0 }}%
+            </span>
           </div>
           
-          <div class="mb-3">
-            <div class="flex justify-between text-sm mb-1">
-              <span class="text-gray-500">Progress:</span>
-              <span class="text-gray-700 font-medium">
-                {{ existingAttempt?.questionsAnswered || 0 }}/{{ existingAttempt?.totalQuestions || 0 }} questions
-              </span>
-            </div>
-            
-            <div class="h-2 bg-gray-200 rounded-full">
-              <div class="h-full bg-blue-500 rounded-full" [style.width.%]="progressPercent"></div>
+          <!-- Score bar -->
+          <div class="h-2 bg-gray-200 rounded-full">
+            <div class="h-full rounded-full" 
+                 [ngClass]="existingAttempt?.passed ? 'bg-green-500' : 'bg-red-500'"
+                 [style.width.%]="existingAttempt?.score || 0">
             </div>
           </div>
           
-          <div class="text-sm text-gray-500">
-            <span>Time spent: </span>
-            <span class="font-medium text-gray-700">
-              {{ formatTime(existingAttempt?.timeSpent || 0) }}
+          <!-- Pass/Fail status -->
+          <div class="mt-2 text-center">
+            <span [ngClass]="existingAttempt?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'" 
+                  class="px-2 py-1 text-xs font-medium rounded">
+              {{ existingAttempt?.passed ? 'PASSED' : 'FAILED' }}
             </span>
           </div>
         </div>
         
-        <p class="text-sm text-gray-500 mb-6">
+        <!-- Progress for incomplete exams -->
+        <div *ngIf="!existingAttempt?.completed" class="mb-3">
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-500">Progress:</span>
+            <span class="text-gray-700 font-medium">
+              {{ existingAttempt?.questionsAnswered || 0 }}/{{ existingAttempt?.totalQuestions || 0 }} questions
+            </span>
+          </div>
+          
+          <div class="h-2 bg-gray-200 rounded-full">
+            <div class="h-full bg-blue-500 rounded-full" [style.width.%]="progressPercent"></div>
+          </div>
+        </div>
+        
+        <!-- Time spent -->
+        <div class="text-sm text-gray-500">
+          <span>Time spent: </span>
+          <span class="font-medium text-gray-700">
+            {{ formatTime(existingAttempt?.timeSpent || 0) }}
+          </span>
+        </div>
+      </div>
+      
+      <!-- Different messages based on completion status -->
+      <p class="text-sm text-gray-500 mb-6">
+        <ng-container *ngIf="existingAttempt?.completed">
+          Would you like to start a new session or view your detailed results?
+        </ng-container>
+        <ng-container *ngIf="!existingAttempt?.completed">
           Would you like to resume this session or start a new one? 
           Starting a new session will abandon your current progress.
-        </p>
+        </ng-container>
+      </p>
+      
+      <!-- Buttons - Different options based on completion status -->
+      <div class="flex justify-end gap-3">
+        <button 
+          (click)="onCancelClicked()"
+          class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">
+          Cancel
+        </button>
         
-        <!-- Buttons -->
-        <div class="flex justify-end gap-3">
-          <button 
-            (click)="onCancelClicked()"
-            class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900">
-            Cancel
-          </button>
-          
-          <button 
-            (click)="onStartNewClicked()"
-            class="px-4 py-2 text-sm text-red-600 hover:text-red-800">
-            Start New Session
-          </button>
-          
-          <button 
-            (click)="onResumeClicked()"
-            class="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700">
-            Resume Session
-          </button>
-        </div>
+        <button 
+          (click)="onStartNewClicked()"
+          class="px-4 py-2 text-sm text-red-600 hover:text-red-800">
+          Start New Session
+        </button>
+        
+        <!-- Show Resume button for incomplete exams -->
+        <button 
+          *ngIf="!existingAttempt?.completed"
+          (click)="onResumeClicked()"
+          class="px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700">
+          Resume Session
+        </button>
+        
+        <!-- Show View Results button for completed exams -->
+        <button 
+          *ngIf="existingAttempt?.completed"
+          (click)="onViewResultsClicked()"
+          class="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded hover:bg-green-700">
+          View Results
+        </button>
       </div>
     </div>
   </div>
+</div>
