@@ -98,7 +98,7 @@ export class ExamInstructionsComponent implements OnInit {
           this.showResumeDialog = true;
         } else {
           // No existing attempt, go directly to the exam
-          this.router.navigate(['/portal/exams', this.examData._id, 'session']);
+          this.router.navigate(['/exams', this.examData._id, 'session']);
         }
       },
       error: (error) => {
@@ -110,21 +110,20 @@ export class ExamInstructionsComponent implements OnInit {
   
   onResumeExam(attemptId: string) {
     this.showResumeDialog = false;
-    console.log("djhrruhrhutuhtuhtuh")
-    this.router.navigate(['/portal/exams', attemptId, 'session'], { 
+    this.router.navigate(['/exams', attemptId, 'session'], { 
       queryParams: { resume: true }
     });
   }
   
   onStartNewExam() {
     this.showResumeDialog = false;
-    this.router.navigate(['/portal/exams', this.examData._id, 'session']);
+    this.router.navigate(['/exams', this.examData._id, 'session']);
     
   }
 
   onViewResults(attemptId: string) {
     this.showResumeDialog = false;
-    this.router.navigate(['/portal/exams/results', attemptId]);
+    this.router.navigate(['/exams/results', attemptId]);
   }
   
   onCancelDialog() {
@@ -133,7 +132,7 @@ export class ExamInstructionsComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/portal/exams/select']);
+    this.router.navigate(['/exams/select']);
   }
 
   hasWebcamPermission = false;

@@ -4,7 +4,7 @@ import { HomeComponent } from './pages/home/home.component';
 import { LoginComponent } from './pages/auth/login/login.component';
 import { RegisterComponent } from './pages/auth/register/register.component';
 import { ExamComponent } from './pages/exam/exam/exam.component';
-import { AdminLayoutComponent, ExamLayoutComponent } from './components/layouts/layouts.component';
+import { AdminLayoutComponent, ExamLayoutComponent, MainLayoutComponent } from './components/layouts/layouts.component';
 import { SelectExamComponent } from './pages/exam/select-exam/select-exam.component';
 import { ExamInstructionsComponent } from './pages/exam/exam-instructions/exam-instructions.component';
 import { ExamResultsComponent } from './pages/exam/exam-results/exam-results.component';
@@ -15,6 +15,13 @@ import { AdminQuestionsComponent } from './pages/admin/question/question.compone
 import { AdminUsersComponent } from './pages/admin/users/users.component';
 import { AdminLoginComponent } from './pages/admin/auth/auth.component';
 import { adminAuthGuard, authGuard } from './auth-guard.guard';
+import { ActiveExamsComponent } from './pages/admin/active-exams/active-exams.component';
+import { AnalyticsComponent } from './pages/admin/analytics/analytics.component';
+import { CertificationAnalyticsComponent } from './pages/admin/certification-analytics/certification-analytics.component';
+import { StudentDashboardComponent } from './pages/student-dashboard/student-dashboard.component';
+import { AdminLessonsComponent } from './pages/admin-lessons/admin-lessons.component';
+import { AdminTutorialAnalyticsComponent } from './pages/admin-tutorial-analytics/admin-tutorial-analytics.component';
+import { AdminTutorialsComponent } from './pages/admin-tutorials/admin-tutorials.component';
 
 const routes: Routes = [
   {
@@ -26,20 +33,20 @@ const routes: Routes = [
       // { path: 'forgot-password', component: ForgotPasswordComponent },
       // { path: 'reset-password/:token', component: ResetPasswordComponent },
       { path: 'admin/login', component: AdminLoginComponent },
-      { path: '', redirectTo: '/auth/login', pathMatch: 'full' }
     ]
   },
+
   
   { 
-    path: 'portal', 
+    path: '', 
     component: ExamLayoutComponent,
     canActivate: [authGuard], 
     children: [
+    { path: 'dashboard', component: StudentDashboardComponent },
     { path: 'exams/select', component: SelectExamComponent },
     { path: 'exams/:examId/session', component: ExamComponent },
     { path: 'exams/:examId/instructions', component: ExamInstructionsComponent },
     { path: 'exams/results/:attemptId', component: ExamResultsComponent },
-    { path: '', redirectTo: '/portal/exams/select', pathMatch: 'full' }, 
   ] 
 },
 {
@@ -52,11 +59,16 @@ const routes: Routes = [
     { path: 'exams', component: AdminExamsComponent },
     { path: 'users', component: AdminUsersComponent },
     { path: 'questions', component: AdminQuestionsComponent },
-    { path: '', redirectTo: '/admin/dashboard', pathMatch: 'full' }
+    { path: 'active-exams', component: ActiveExamsComponent },
+    { path: 'analytics', component: AnalyticsComponent },
+    { path: 'analytics/certifications', component: CertificationAnalyticsComponent },
+    { path: 'tutorials', component: AdminTutorialsComponent},
+    { path: 'tutorials/:id/lessons', component: AdminLessonsComponent},
+    { path: 'tutorials/:id/analytics', component: AdminTutorialAnalyticsComponent}
   ]
 },
 
-  { path: '**', redirectTo: '' },
+ { path: '**', redirectTo: 'dashboard' }
 ];
 
 @NgModule({

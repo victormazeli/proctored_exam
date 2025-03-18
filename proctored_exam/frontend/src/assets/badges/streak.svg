@@ -1,0 +1,12 @@
+<!-- streak.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="flameGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FF7043"/>
+      <stop offset="100%" stop-color="#F4511E"/>
+    </linearGradient>
+  </defs>
+  <title>3-Day Streak Badge</title>
+  <path d="M32 12c-6 8-2 18 0 26s4 8 0 12-10-10-10-12 2-12 10-26z" fill="url(#flameGradient)"/>
+  <text x="32" y="52" font-size="16" text-anchor="middle" fill="#fff" font-family="Helvetica, Arial, sans-serif" font-weight="bold">3</text>
+</svg>

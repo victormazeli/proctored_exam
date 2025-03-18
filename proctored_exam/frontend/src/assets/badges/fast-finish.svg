@@ -1,0 +1,11 @@
+<!-- fast-finish.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="lightningGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#EF5350"/>
+      <stop offset="100%" stop-color="#E53935"/>
+    </linearGradient>
+  </defs>
+  <title>Speed Demon Badge</title>
+  <polygon points="28,8 20,36 30,36 24,56 44,24 32,24" fill="url(#lightningGradient)"/>
+</svg>

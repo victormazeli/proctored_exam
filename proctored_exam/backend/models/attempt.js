@@ -99,6 +99,19 @@ const AttemptSchema = new mongoose.Schema({
   questions: [QuestionAttemptSchema],
   proctorEvents: [ProctorEventSchema],
   score: ScoreSchema,
+  flagged: {
+    type: Boolean,
+    default: false
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'in_progress', 'completed', 'terminated'],
+    default: 'pending'
+  },
+  terminatedBy: {
+    type:  mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   passed: {
     type: Boolean
   },

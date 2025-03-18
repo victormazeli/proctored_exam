@@ -4,6 +4,7 @@ import { User } from 'src/app/models/auth.interface';
 import { AdminService } from 'src/app/services/admin.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { finalize } from 'rxjs/operators';
+import { TutorialService } from 'src/app/services/tutorial.service';
 
 interface StatCard {
   icon: string;
@@ -65,6 +66,13 @@ export class DashboardComponent implements OnInit {
     attemptCount: 0,
     lastWeekAttempts: 0
   };
+
+  tutorialStats: any = {
+    total: 0,
+    active: 0,
+    lessons: 0
+  };
+  
 
   recentAttempts: ExamAttempt[] = [];
   certPassRates: CertPassRate[] = [];
@@ -174,7 +182,7 @@ export class DashboardComponent implements OnInit {
   // Search
   searchTerm = '';
 
-  constructor(private adminService: AdminService, private authService: AuthService) {}
+  constructor(private adminService: AdminService, private authService: AuthService, private tutorialService: TutorialService) {}
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -232,7 +240,7 @@ export class DashboardComponent implements OnInit {
 
   loadAttemptsWithFilters(): void {
     this.isLoading = true;
-    this.adminService.getFilteredAttempts(this.searchTerm, this.currentPage, this.pageSize)
+    this.adminService.getFilteredAttempts(this.searchTerm, this.currentPage, this.pageSize, '')
       .pipe(
         finalize(() => {
           this.isLoading = false;
@@ -261,5 +269,20 @@ export class DashboardComponent implements OnInit {
 
   currentPageCalculation(totalAttempts: number, pageSize: number): number {
     return Math.ceil(totalAttempts / pageSize)
+  }
+
+  loadTutorialStats(): void {
+    this.tutorialService.getTutorialStats().subscribe(
+      response => {
+        if (response.success) {
+          this.tutorialStats = response.data;
+        } else {
+          console.error('Failed to load tutorial statistics');
+        }
+      },
+      error => {
+        console.error('Error loading tutorial statistics:', error);
+      }
+    );
   }
 }

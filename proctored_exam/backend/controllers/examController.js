@@ -4,89 +4,9 @@ const Question = require('../models/question');
 const Attempt = require('../models/attempt');
 const Certification = require('../models/certification');
 const User = require('../models/user');
-const examService = require('../services/examService');
 // const analyticsService = require('../services/analyticsService');
 const aiService = require('../services/aiService');
 const { body } = require('express-validator');
-
-
-/**
- * Display available exams for a certification
- */
-exports.selectExam = async (req, res) => {
-  try {
-    const certification = await Certification.findById(req.params.certId);
-    if (!certification) {
-      req.flash('error_msg', 'Certification not found');
-      return res.redirect('/exams/select');
-    }
-    
-    const exams = await Exam.find({ 
-      certificationId: certification._id,
-      active: true
-    });
-    
-    // Get user's previous attempts for this certification
-    const attempts = await Attempt.find({
-      userId: req.user._id,
-      certificationId: certification._id,
-      completed: true
-    }).sort({ createdAt: -1 });
-    
-    // Get recommendations based on user's performance
-    const recommendations = await aiService.getRecommendedExams(
-      req.user._id,
-      certification._id
-    );
-    
-    res.render('exams/selectExam', {
-      title: `${certification.name} Exams`,
-      certification,
-      exams,
-      attempts,
-      recommendations
-    });
-  } catch (err) {
-    console.error('Error selecting exam:', err);
-    req.flash('error_msg', 'Failed to load exams');
-    res.redirect('/exams/select');
-  }
-};
-
-/**
- * Display exam instructions and preparation
- */
-exports.examInstructions = async (req, res) => {
-  try {
-    const exam = await Exam.findById(req.params.examId);
-    if (!exam) {
-      req.flash('error_msg', 'Exam not found');
-      return res.redirect('/exams/select');
-    }
-    
-    const certification = await Certification.findById(exam.certificationId);
-    
-    // Check system requirements (webcam, etc.)
-    const systemRequirements = {
-      webcamRequired: true,
-      fullScreenRequired: true,
-      browserSupported: true, // This would be determined by user agent
-      estimatedTime: exam.timeLimit || certification.timeLimit
-    };
-    
-    res.render('exams/instructions', {
-      title: `${exam.name} - Instructions`,
-      exam,
-      certification,
-      systemRequirements,
-      body: ''
-    });
-  } catch (err) {
-    console.error('Error loading exam instructions:', err);
-    req.flash('error_msg', 'Failed to load exam instructions');
-    res.redirect('/exams/select');
-  }
-};
 
 
 exports.getCertifications = async (req, res) => {

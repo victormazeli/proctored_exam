@@ -13,7 +13,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   loading = false;
   submitted = false;
-  returnUrl: string = '/portal/exams/select';
+  returnUrl: string = '/dashboard';
   
 
   constructor(
@@ -37,7 +37,6 @@ export class LoginComponent {
 
     // If already logged in, redirect to return URL
     if (this.authService.isAuthenticated()) {
-      console.log(this.authService.isAuthenticated())
       this.router.navigate([this.returnUrl]);
     }
   }

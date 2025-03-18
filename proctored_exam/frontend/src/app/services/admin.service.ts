@@ -313,17 +313,6 @@ export class AdminService {
       );
   }
 
-  getCertificationAnalytics(certId?: string): Observable<any> {
-    let url = `${this.apiUrl}/analytics/certifications`;
-    if (certId) {
-      url += `/${certId}`;
-    }
-    
-    return this.http.get<any>(url)
-      .pipe(
-        catchError(this.handleError('getCertificationAnalytics', { success: false }))
-      );
-  }
 
   getAttemptDetails(attemptId: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/analytics/attempts/${attemptId}`)
@@ -389,7 +378,7 @@ export class AdminService {
     /**
      * Get filtered exam attempts with pagination
      */
-    getFilteredAttempts(searchTerm: string, page: number, limit: number): Observable<any> {
+    getFilteredAttempts(searchTerm: string, page: number, limit: number, certificationId: string): Observable<any> {
       let params = new HttpParams()
         .set('page', page.toString())
         .set('limit', limit.toString());
@@ -397,22 +386,61 @@ export class AdminService {
       if (searchTerm) {
         params = params.set('search', searchTerm);
       }
+
+      if (certificationId) {
+        params = params.set('certificationId', certificationId);
+      }
       
-      return this.http.get(`${this.apiUrl}/admin/attempts`, { params });
+      return this.http.get(`${this.apiUrl}/attempts`, { params });
     }
   
     /**
      * Get certification pass rates
      */
     getCertificationPassRates(days: number = 30): Observable<any> {
-      return this.http.get(`${this.apiUrl}/admin/analytics/certifications/pass-rates?days=${days}`);
+      return this.http.get(`${this.apiUrl}/analytics/certifications/pass-rates?days=${days}`);
     }
   
     /**
      * Get specific exam attempt details
      */
     getExamAttempt(attemptId: string): Observable<any> {
-      return this.http.get(`${this.apiUrl}/admin/attempts/${attemptId}`);
+      return this.http.get(`${this.apiUrl}/attempts/${attemptId}`);
+    }
+
+    getAnalytics(params?: any): Observable<any> {
+      let httpParams = new HttpParams();
+    
+      if (params) {
+        Object.keys(params).forEach(key => {
+          if (params[key]) {
+            httpParams = httpParams.append(key, params[key]);
+          }
+        });
+      }
+      
+      return this.http.get<any>(`${this.apiUrl}/analytics`, { params: httpParams })
+      .pipe(
+        catchError(this.handleError('getAnalytics', { success: false, data: {}}))
+      );
+    }
+
+
+    getCertificationAnalytics(params?: any): Observable<any> {
+      let httpParams = new HttpParams();
+    
+      if (params) {
+        Object.keys(params).forEach(key => {
+          if (params[key]) {
+            httpParams = httpParams.append(key, params[key]);
+          }
+        });
+      }
+      
+      return this.http.get<any>(`${this.apiUrl}/analytics/certifications`, { params: httpParams })
+      .pipe(
+        catchError(this.handleError('getCertificationAnalytics', { success: false, data: {}}))
+      );
     }
   
     /**
@@ -423,22 +451,50 @@ export class AdminService {
         .set('page', page.toString())
         .set('limit', limit.toString());
       
-      return this.http.get(`${this.apiUrl}/admin/certifications/${certId}/questions`, { params });
+      return this.http.get(`${this.apiUrl}/certifications/${certId}/questions`, { params });
     }
   
     /**
      * Create new exam
      */
     createExam(examData: any): Observable<any> {
-      return this.http.post(`${this.apiUrl}/admin/exams`, examData);
+      return this.http.post(`${this.apiUrl}/exams`, examData);
     }
   
     /**
      * Create new question
      */
     createQuestion(questionData: any): Observable<any> {
-      return this.http.post(`${this.apiUrl}/admin/questions`, questionData);
+      return this.http.post(`${this.apiUrl}/questions`, questionData);
     }
+
+
+
+
+  // Methods for Active Exams page
+  getActiveExams(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/exams/active`);
+  }
+
+  getSessionActivityLogs(sessionId: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/exams/sessions/${sessionId}/logs`);
+  }
+
+  terminateExamSession(sessionId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/exams/sessions/${sessionId}/terminate`, {});
+  }
+
+  flagSession(sessionId: string, reason: string, severity: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/exams/sessions/${sessionId}/flag`, { reason, severity });
+  }
+
+  sendWarningToUser(sessionId: string, message: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/exams/sessions/${sessionId}/warn`, { message });
+  }
+
+  dismissFlaggedActivity(activityId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/exams/flagged-activities/${activityId}/dismiss`, {});
+  }
   
 
   // Generic error handler

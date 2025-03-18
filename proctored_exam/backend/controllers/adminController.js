@@ -65,25 +65,61 @@ exports.getDashboard = async (req, res) => {
  */
 exports.getFilteredAttempts = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = '' } = req.query;
-    const skip = (page - 1) * limit;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    const certificationId = req.query.certificationId || null;
     
-    // Build search query
-    let query = { completed: true };
+    // Build query
+    const query = { completed: true };
+    
+    // Apply certification filter if specified
+    if (certificationId && certificationId !== 'all') {
+      query.certificationId = certificationId;
+    }
+    
+    // Apply search filter if provided
     if (search) {
-      // Search by username or exam name
-      query['$or'] = [
-        { 'userId.username': { $regex: search, $options: 'i' } },
-        { 'examId.name': { $regex: search, $options: 'i' } },
-        { 'certificationId.name': { $regex: search, $options: 'i' } }
+      // Get user IDs that match the search
+      const users = await User.find({
+        $or: [
+          { username: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      
+      const userIds = users.map(u => u._id);
+      
+      // Get exam IDs that match the search
+      const exams = await Exam.find({
+        name: { $regex: search, $options: 'i' }
+      }).select('_id');
+      
+      const examIds = exams.map(e => e._id);
+      
+      // Get certification IDs that match the search
+      const certifications = await Certification.find({
+        name: { $regex: search, $options: 'i' }
+      }).select('_id');
+      
+      const certIds = certifications.map(c => c._id);
+      
+      // Apply combined search
+      query.$or = [
+        { userId: { $in: userIds } },
+        { examId: { $in: examIds } },
+        { certificationId: { $in: certIds } }
       ];
     }
+    
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
     
     // Get attempts with pagination
     const attempts = await Attempt.find(query)
       .sort({ endTime: -1 })
       .skip(skip)
-      .limit(parseInt(limit))
+      .limit(limit)
       .populate('userId', 'username email')
       .populate('examId', 'name')
       .populate('certificationId', 'name');
@@ -91,16 +127,16 @@ exports.getFilteredAttempts = async (req, res) => {
     // Get total count for pagination
     const total = await Attempt.countDocuments(query);
     
-    res.status(200).json({
+    return res.status(200).json({
       attempts,
       total,
-      page: parseInt(page),
+      page,
       pages: Math.ceil(total / limit)
     });
   } catch (err) {
     console.error('Error getting filtered attempts:', err);
-    res.status(500).json({ 
-      success: false, 
+    return res.status(500).json({
+      success: false,
       message: 'Failed to get attempts data',
       error: err.message
     });

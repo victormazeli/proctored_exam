@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MarkdownModule, MarkdownService } from 'ngx-markdown';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -42,6 +43,17 @@ import { ResumeExamDialogComponent } from './pages/exam/resume-exam-dialog/resum
 import { AdminLoginComponent } from './pages/admin/auth/auth.component';
 import { AuthInterceptor } from './auth-interceptor.interceptor';
 import { AuthService } from './services/auth.service';
+import { AnalyticsComponent } from './pages/admin/analytics/analytics.component';
+import { CertificationAnalyticsComponent } from './pages/admin/certification-analytics/certification-analytics.component';
+import { ActiveExamsComponent } from './pages/admin/active-exams/active-exams.component';
+import { StudentDashboardComponent } from './pages/student-dashboard/student-dashboard.component';
+import { environment } from 'src/environment/environment';
+import { AdminService } from './services/admin.service';
+import { LeaderboardService } from './services/leaderboard.service';
+import { AnalyticService } from './services/analytic.service';
+import { AdminTutorialsComponent } from './pages/admin-tutorials/admin-tutorials.component';
+import { AdminLessonsComponent } from './pages/admin-lessons/admin-lessons.component';
+import { AdminTutorialAnalyticsComponent } from './pages/admin-tutorial-analytics/admin-tutorial-analytics.component';
 
 
 const getToken = () => {
@@ -50,7 +62,7 @@ const getToken = () => {
 
 // Configure Socket.io with your backend URL
 const config: SocketIoConfig = { 
-  url: 'http://localhost:3000', // Replace with your backend URL
+  url: environment.api,
   options: {
     transports: ['websocket'],
     autoConnect: false 
@@ -92,7 +104,14 @@ const config: SocketIoConfig = {
     ConnectionStatusComponent,
     SaveStatusComponent,
     ResumeExamDialogComponent,
-    AdminLoginComponent
+    AdminLoginComponent,
+    AnalyticsComponent,
+    CertificationAnalyticsComponent,
+    ActiveExamsComponent,
+    StudentDashboardComponent,
+    AdminTutorialsComponent,
+    AdminLessonsComponent,
+    AdminTutorialAnalyticsComponent
   ],
   imports: [
     BrowserAnimationsModule,
@@ -103,12 +122,16 @@ const config: SocketIoConfig = {
     ReactiveFormsModule,
     AppRoutingModule,
     HttpClientModule,
+    MarkdownModule.forRoot(),
     SocketIoModule.forRoot(config),
   ],
   providers: [
     ExamService,
     ProctorService,
     AuthService,
+    AdminService,
+    LeaderboardService,
+    AnalyticService,
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
   ],
   bootstrap: [AppComponent]

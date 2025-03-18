@@ -31,7 +31,7 @@ function setupSocketHandlers(io, sessionMiddleware, config = {}) {
         }
         
         // Verify JWT token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'kjhruht588u659u6957u9u');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         
         // Fetch user from database
         const user = await User.findById(decoded.id);

@@ -1,0 +1,12 @@
+<!-- first-attempt.svg -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="trophyGradient" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFDC64"/>
+      <stop offset="100%" stop-color="#FFC107"/>
+    </linearGradient>
+  </defs>
+  <title>First Attempt Badge</title>
+  <path d="M16 12h32a4 4 0 0 1 4 4v10a12 12 0 0 1-12 12H24A12 12 0 0 1 12 26V16a4 4 0 0 1 4-4z" fill="url(#trophyGradient)"/>
+  <rect x="24" y="36" width="16" height="6" rx="2" fill="url(#trophyGradient)"/>
+</svg>

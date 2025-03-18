@@ -222,7 +222,7 @@ export class ExamResultsComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/portal/exams/select']);
+    this.router.navigate(['/exams/select']);
   }
 
   objectKeys(obj: any): string[] {

@@ -1,0 +1,173 @@
+{
+    "metadata": {
+      "title": "Introduction to AWS S3",
+      "description": "Learn the essentials of Amazon S3 for the AWS Solutions Architect Associate (SAA-C03) certification. This module covers fundamental concepts, storage classes, security, versioning, and performance optimization techniques to help you prepare for real-world scenarios and exam success.",
+      "certificationId": "67c476bba040959cfad4949c"
+    },
+    "lessons": [
+      {
+        "title": "S3 Basics and Core Concepts",
+        "content": "# S3 Basics and Core Concepts\n\nAmazon Simple Storage Service (S3) is an object storage service that offers industry-leading scalability, data availability, security, and performance. S3 is a key component in many AWS architectures.\n\n### Key Points:\n1. **Buckets**: Logical containers for storing objects.\n2. **Objects**: Files stored in buckets (plus any metadata).\n3. **Key**: Unique identifier for an object within a bucket.\n4. **Regions**: Physical location of the data centers hosting your bucket. You should choose a region based on latency, security, and compliance requirements.\n5. **Data Consistency**: S3 provides read-after-write consistency for PUTS of new objects, and eventual consistency for overwrite PUTS and DELETES.\n\nUnderstanding these core concepts will help you design highly available and durable storage solutions on AWS.",
+        "practicalExercises": [
+          {
+            "title": "Create a Public S3 Bucket",
+            "description": "Practice creating an S3 bucket with public read access.",
+            "instructions": "1. Go to the AWS S3 console.\n2. Click 'Create bucket' and choose a unique bucket name.\n3. Select a region.\n4. Uncheck 'Block all public access' (only for this exercise; it’s not recommended in production).\n5. Upload a sample file.\n6. Verify that the file is accessible publicly via its object URL.",
+            "expectedOutput": "A publicly accessible URL to the uploaded file that you can open in a web browser.",
+            "solution": "# Solution\n\n1. In the AWS console, navigate to **Services** -> **S3**.\n2. Click **Create bucket**, enter a globally unique name, and select the region of your choice.\n3. Under **Object Ownership**, select *ACLs enabled* (for demo/testing). Uncheck *Block all public access*.\n4. After creating the bucket, click **Upload** to add a file (e.g., an image or text file).\n5. Once uploaded, select the object, go to **Permissions**, and set the object ACL to `public-read`.\n6. Copy the **Object URL** and open it in your browser to ensure it is publicly accessible.",
+            "hints": [
+              {
+                "text": "Remember to uncheck 'Block all public access' for this exercise.",
+                "order": 1
+              },
+              {
+                "text": "You might need a bucket policy or object ACL to grant public read access.",
+                "order": 2
+              }
+            ],
+            "difficulty": "beginner",
+            "estimatedTime": 20
+          }
+        ]
+      },
+      {
+        "title": "S3 Storage Classes and Lifecycle Management",
+        "content": "# S3 Storage Classes and Lifecycle Management\n\nAmazon S3 offers multiple storage classes for different use cases and cost requirements:\n1. **S3 Standard**: General-purpose, frequently accessed data.\n2. **S3 Standard-IA (Infrequent Access)**: Lower storage cost for infrequently accessed data.\n3. **S3 One Zone-IA**: Infrequent access but stored in a single Availability Zone.\n4. **S3 Intelligent-Tiering**: Automatically moves objects between access tiers based on usage.\n5. **S3 Glacier Instant Retrieval**, **Glacier Flexible Retrieval**, and **Glacier Deep Archive**: Archival storage classes offering different retrieval times and costs.\n\n**Lifecycle Management** allows you to automatically transition objects to different storage classes or expire them when they reach a defined age or date. This helps optimize costs and simplify administration.",
+        "practicalExercises": [
+          {
+            "title": "Configure Lifecycle Rules",
+            "description": "Apply a lifecycle rule to move objects from S3 Standard to S3 Standard-IA after a set period.",
+            "instructions": "1. Create or locate an existing S3 bucket.\n2. Upload a few test objects (e.g., text files).\n3. In the bucket's Management tab, create a new lifecycle rule.\n4. Configure the rule to transition objects from S3 Standard to S3 Standard-IA after 30 days.\n5. Save the rule and review the policy.",
+            "expectedOutput": "A lifecycle rule that transitions objects from Standard to Standard-IA after 30 days of object creation.",
+            "solution": "# Solution\n\n1. Open the **S3 console** and choose an existing bucket or create a new one.\n2. Click on the bucket name, then go to **Management** -> **Lifecycle rules**.\n3. Select **Create lifecycle rule**.\n4. Name the rule (e.g., `transition-to-ia`) and choose *This rule applies to all objects in the bucket* or specify a prefix.\n5. Under **Transitions**, select **S3 Standard-IA** and set the transition to begin at 30 days.\n6. Save the rule.\n\nAfter 30 days, objects will automatically transition to the S3 Standard-IA class.",
+            "hints": [
+              {
+                "text": "Lifecycle rules can target specific prefixes or object tags.",
+                "order": 1
+              },
+              {
+                "text": "You can use S3 Glacier classes for deeper cost savings but accept longer retrieval times.",
+                "order": 2
+              }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 30
+          }
+        ]
+      },
+      {
+        "title": "S3 Security and Access Management",
+        "content": "# S3 Security and Access Management\n\nSecurity in S3 can be managed with multiple layers:\n1. **Bucket Policies**: JSON-based access policy that grants or denies permissions to the entire bucket or specific paths.\n2. **IAM Policies**: Control what actions a user or service can perform.\n3. **Access Control Lists (ACLs)**: Legacy method of granting specific permissions to objects.\n4. **Public Access Block**: Prevent accidental public exposure.\n\n**Encryption** is also crucial:\n- **Server-Side Encryption (SSE-S3)**: Managed by AWS.\n- **SSE-KMS**: Uses AWS Key Management Service for additional control.\n- **Client-Side Encryption**: Encryption before uploading data to AWS.",
+        "practicalExercises": [
+          {
+            "title": "Implement Bucket Policy for Read-Only Access",
+            "description": "Create a policy allowing read-only access to a specific prefix for an IAM user or role.",
+            "instructions": "1. Create or use an existing S3 bucket.\n2. Navigate to the Permissions tab and select 'Bucket Policy'.\n3. Write a policy that grants read-only access to a specific folder (prefix) in the bucket for a particular IAM user or role.\n4. Test the policy by switching to that IAM user/role and attempting to list and read objects under that prefix.\n5. Verify that you cannot write or delete objects in that prefix with the new policy.",
+            "expectedOutput": "A functional bucket policy that grants only GET and LIST permissions to a specific folder, ensuring no write or delete operations are allowed.",
+            "solution": "# Solution\n\n1. In the S3 console, choose your bucket, then go to **Permissions** -> **Bucket Policy**.\n2. Use a policy similar to the example below, updating the `Resource` with your bucket name and prefix, and the `Principal` with the IAM user or role ARN:\n```json\n{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [\n    {\n      \"Effect\": \"Allow\",\n      \"Principal\": {\n        \"AWS\": \"arn:aws:iam::123456789012:user/ReadOnlyUser\"\n      },\n      \"Action\": [\n        \"s3:GetObject\",\n        \"s3:ListBucket\"\n      ],\n      \"Resource\": [\n        \"arn:aws:s3:::your-bucket\",\n        \"arn:aws:s3:::your-bucket/specific-prefix/*\"\n      ],\n      \"Condition\": {\n        \"StringLike\": {\n          \"s3:prefix\": \"specific-prefix/*\"\n        }\n      }\n    }\n  ]\n}\n```\n3. Save the policy.\n4. Test by logging in as the IAM user or switching roles, then verify you can only read and list objects under `specific-prefix/`.\n\nMake sure to replace `your-bucket`, `arn:aws:iam::123456789012:user/ReadOnlyUser`, and `specific-prefix` with your actual values.",
+            "hints": [
+              {
+                "text": "Ensure the 'Principal' field matches the exact ARN of the IAM user or role.",
+                "order": 1
+              },
+              {
+                "text": "Use conditions to fine-tune access further.",
+                "order": 2
+              }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 40
+          },
+          {
+            "title": "Enable Default Server-Side Encryption (SSE-S3)",
+            "description": "Configure default encryption on a bucket so that all new objects are encrypted at rest with SSE-S3.",
+            "instructions": "1. In the S3 console, select your bucket.\n2. Under the 'Properties' tab, enable 'Default encryption'.\n3. Choose SSE-S3 as your encryption method.\n4. Upload a new file to verify it’s automatically encrypted.\n5. Check the 'Encryption' metadata of the object to confirm SSE-S3 is applied.",
+            "expectedOutput": "A bucket that automatically encrypts all new objects with SSE-S3 without additional configuration from clients.",
+            "solution": "# Solution\n\n1. Go to **S3** -> **Your Bucket** -> **Properties**.\n2. Scroll to **Default encryption** and click **Edit**.\n3. Select **Amazon S3 managed keys (SSE-S3)** and save.\n4. Upload a new object and check its properties under **Metadata** -> **Encryption**.\n5. Confirm that it displays `AES256`, which indicates SSE-S3 encryption.",
+            "hints": [
+              {
+                "text": "SSE-KMS uses AWS KMS keys for tighter control but may incur additional costs.",
+                "order": 1
+              },
+              {
+                "text": "Default encryption ensures no unencrypted data lands in your bucket.",
+                "order": 2
+              }
+            ],
+            "difficulty": "beginner",
+            "estimatedTime": 15
+          }
+        ]
+      },
+      {
+        "title": "Versioning and Object Lifecycle Policies",
+        "content": "# Versioning and Object Lifecycle Policies\n\n**Versioning** allows you to store multiple variants of an object in the same bucket. This is crucial for data protection and recovery from unintended overwrites or deletions.\n\nKey behaviors when Versioning is enabled:\n- Each time you overwrite or delete an object, S3 creates a new version.\n- You can use Lifecycle policies to manage versions (e.g., transition old versions to cheaper storage classes or set them to expire).\n\nCombining versioning with lifecycle rules helps automate archival and deletion of old versions, reducing storage costs while retaining the ability to recover data if needed.",
+        "practicalExercises": [
+          {
+            "title": "Enable Versioning and Test Object Recovery",
+            "description": "Enable versioning on a bucket and demonstrate object recovery after an accidental overwrite or deletion.",
+            "instructions": "1. Choose an existing bucket or create a new one.\n2. In the 'Properties' tab, enable 'Bucket Versioning'.\n3. Upload a file named `test.txt`.\n4. Overwrite `test.txt` with a new version.\n5. Delete the object (which sets a delete marker).\n6. Show that older versions can still be restored or retrieved from the console.",
+            "expectedOutput": "Versioned objects in the bucket with the ability to restore overwritten or deleted files using prior versions.",
+            "solution": "# Solution\n\n1. From the S3 console, select your bucket, then go to **Properties** -> **Bucket Versioning** -> **Enable**.\n2. Upload an object named `test.txt`.\n3. Upload a new `test.txt` with different content, overwriting the original. This creates a second version.\n4. Delete `test.txt`. Instead of removing the file entirely, S3 adds a *delete marker*.\n5. Switch to the **Versions** view to see all versions, including the delete marker and older versions.\n6. To restore, delete the *delete marker* or specify the version ID of the object you want to recover.",
+            "hints": [
+              {
+                "text": "Bucket versioning cannot be disabled once enabled; it can only be suspended.",
+                "order": 1
+              },
+              {
+                "text": "Use lifecycle rules to manage older versions (e.g., transition them to cheaper storage).",
+                "order": 2
+              }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 25
+          }
+        ]
+      },
+      {
+        "title": "Performance Optimization and Data Transfer in S3",
+        "content": "# Performance Optimization and Data Transfer in S3\n\nFor high performance and optimized data transfer:\n1. **Prefix Performance Optimizations**: S3 scales automatically to handle large request rates, but consider using random or distributed prefixes for very high request loads.\n2. **Multipart Upload**: Break large files into chunks for faster, more efficient uploads.\n3. **S3 Transfer Acceleration**: Use AWS edge locations to speed up uploads and downloads over long distances.\n4. **Parallelization**: Use multiple threads or processes to read/write concurrently.\n\nThese strategies help ensure your application can handle heavy traffic and large data sets efficiently.",
+        "practicalExercises": [
+          {
+            "title": "Use Multipart Upload for Large Files",
+            "description": "Upload a large file (over 100 MB) using the multipart upload feature.",
+            "instructions": "1. Prepare or create a file larger than 100 MB.\n2. Use the AWS CLI or an SDK (e.g., Python, Java, etc.) to initiate a multipart upload.\n3. Observe performance benefits compared to a standard single-part upload.\n4. Verify the object’s integrity post-upload.\n5. Practice aborting an incomplete multipart upload to avoid partial charges.",
+            "expectedOutput": "A large file successfully uploaded to S3 in multiple parts, verified for integrity, and any incomplete parts aborted.",
+            "solution": "# Solution\n\n1. If using the AWS CLI, run:\n   ```bash\n   aws s3 cp largefile.zip s3://your-bucket/largefile.zip --storage-class STANDARD_IA\n   ```\n   By default, the AWS CLI uses multipart upload for files over a certain threshold.\n2. If using an SDK (e.g., Python Boto3), use the **create_multipart_upload**, **upload_part**, and **complete_multipart_upload** methods.\n3. If you need to cancel, use **abort_multipart_upload**.\n\nYou’ll notice faster, more reliable transfers for large files. Also, ensure you clean up incomplete multipart uploads to avoid storage costs.",
+            "hints": [
+              {
+                "text": "Multipart threshold in AWS CLI can be adjusted using the AWS CLI config.",
+                "order": 1
+              },
+              {
+                "text": "Each part must be between 5 MB and 5 GB, with a total object size limit of 5 TB.",
+                "order": 2
+              }
+            ],
+            "difficulty": "advanced",
+            "estimatedTime": 30
+          },
+          {
+            "title": "Enable S3 Transfer Acceleration",
+            "description": "Test how to speed up data transfers using S3 Transfer Acceleration.",
+            "instructions": "1. Create or select an existing bucket.\n2. Enable S3 Transfer Acceleration in the bucket’s Properties.\n3. Use the accelerated endpoint URL to upload or download a file.\n4. Compare speeds between the standard and accelerated endpoints, especially over long distances.",
+            "expectedOutput": "A faster data transfer rate when using the S3 Transfer Acceleration endpoint (notable if you’re geographically distant from the bucket region).",
+            "solution": "# Solution\n\n1. In the S3 console, open your bucket’s **Properties**.\n2. Under **Transfer acceleration**, enable the feature.\n3. Note the new accelerated endpoint (e.g., `bucketname.s3-accelerate.amazonaws.com`).\n4. Compare upload/download speeds using:\n   ```bash\n   aws s3 cp testfile.txt s3://bucketname --endpoint-url https://bucketname.s3-accelerate.amazonaws.com\n   ```\n5. Observe improved transfer performance, especially over long distances.",
+            "hints": [
+              {
+                "text": "This feature uses AWS edge locations to optimize data transfer paths.",
+                "order": 1
+              },
+              {
+                "text": "There is an additional cost for using S3 Transfer Acceleration.",
+                "order": 2
+              }
+            ],
+            "difficulty": "advanced",
+            "estimatedTime": 20
+          }
+        ]
+      }
+    ]
+  }
+  

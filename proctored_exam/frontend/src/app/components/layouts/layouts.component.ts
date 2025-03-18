@@ -197,6 +197,11 @@ export class AdminLayoutComponent {
       label: 'Exams', 
       route: '/admin/exams' 
     },
+    {
+      icon: 'fas fa-book',
+      label: 'Tutorials',
+      route: '/admin/tutorials'
+    },
     { 
       icon: 'fas fa-question-circle', 
       label: 'Questions', 
@@ -236,8 +241,6 @@ export class AdminLayoutComponent {
 
   ngOnInit(): void {
     this.currentUser = this.authService.currentUserValue
-
-    console.log(this.currentUser.avatar)
   }
 
 

@@ -28,7 +28,7 @@ export class ExamService {
    * Initialize exam data
    */
   initializeExam(examId: string, forceNew: boolean = false): Observable<any> {
-    const params: any = forceNew ? { forceNew: 'true' } : {};
+    const params: any = forceNew ? { forceNew: 'true', adaptive: 'true' } : {};
     let httpParams = new HttpParams();
       Object.keys(params).forEach(key => {
         if (params[key]) {

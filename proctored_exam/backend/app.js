@@ -15,7 +15,10 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/auth');
 const examRoutes = require('./routes/exams');
+const analyticRoutes = require('./routes/analytic');
 const questionRoutes = require('./routes/questions');
+const leaderboardRoutes = require('./routes/leaderboard');
+const tutorialRoutes = require('./routes/tutorial');
 const adminRoutes = require('./routes/admin');
 const proctorRoutes = require('./routes/proctor');
 
@@ -75,6 +78,9 @@ require('./config/passport')(passport);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/exams', authenticateJWT, examRoutes);
+app.use('/api/analytics', authenticateJWT, analyticRoutes);
+app.use('/api/leaderboard', authenticateJWT, leaderboardRoutes);
+app.use('/api', authenticateJWT, tutorialRoutes);
 app.use('/api/admin/questions', authenticateJWT, questionRoutes);
 app.use('/api/admin', authenticateJWT, adminRoutes);
 app.use('/proctor', authenticateJWT, proctorRoutes);

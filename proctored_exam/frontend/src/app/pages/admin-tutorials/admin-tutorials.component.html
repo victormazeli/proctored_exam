@@ -1,0 +1,292 @@
+<!-- admin-tutorials.component.html -->
+<div class="admin-tutorials">
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">Tutorial Management</h1>
+        <div class="flex space-x-4">
+          <div class="relative">
+            <select [(ngModel)]="selectedCertification" (change)="onCertificationFilterChange()" class="form-select">
+              <option value="">All Certifications</option>
+              <option *ngFor="let cert of certifications" [value]="cert._id">
+                {{ cert.name }} ({{ cert.code }})
+              </option>
+            </select>
+          </div>
+          <button (click)="openAddTutorialModal()" class="btn btn-primary">
+            <i class="fas fa-plus mr-2"></i> Create Tutorial
+          </button>
+          <button (click)="openImportModal()" class="btn btn-secondary">
+            <i class="fas fa-file-import mr-2"></i> Import
+          </button>
+        </div>
+      </div>
+  
+      <!-- Tutorials Table -->
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="th-cell">Tutorial Name</th>
+                  <th class="th-cell">Certification</th>
+                  <th class="th-cell">Lessons</th>
+                  <th class="th-cell">Created</th>
+                  <th class="th-cell">Status</th>
+                  <th class="th-cell">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngIf="tutorials && tutorials.length > 0; else noTutorials">
+                  <tr *ngFor="let tutorial of tutorials" class="hover:bg-gray-50 border-b border-gray-200">
+                    <td class="td-cell font-medium text-gray-900">
+                      {{ tutorial.title }}
+                      <div class="text-xs text-gray-500 mt-1">{{ tutorial.description | slice:0:60 }}{{ tutorial.description.length > 60 ? '...' : '' }}</div>
+                    </td>
+                    <td class="td-cell">
+                      <span class="cert-badge">{{ tutorial.certification?.code || 'Unknown' }}</span>
+                    </td>
+                    <td class="td-cell">
+                      <div class="flex items-center">
+                        <span class="text-gray-900">{{ tutorial.lessonCount || 0 }}</span>
+                        <a [routerLink]="['/admin/tutorials', tutorial._id, 'lessons']" class="ml-2 text-blue-600 hover:text-blue-800">
+                          <i class="fas fa-list-ul"></i>
+                        </a>
+                      </div>
+                    </td>
+                    <td class="td-cell text-gray-500">
+                      <div>{{ tutorial.createdAt | date }}</div>
+                      <div class="text-xs">Updated: {{ tutorial.updatedAt | date }}</div>
+                    </td>
+                    <td class="td-cell">
+                      <span class="status-badge" [ngClass]="tutorial.active ? 'active' : 'inactive'">
+                        {{ tutorial.active ? 'Active' : 'Inactive' }}
+                      </span>
+                    </td>
+                    <td class="td-cell">
+                      <div class="flex space-x-2">
+                        <button class="action-btn" (click)="openEditTutorialModal(tutorial._id)" title="Edit">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <a [routerLink]="['/admin/tutorials', tutorial._id, 'lessons']" class="action-btn" title="Manage Lessons">
+                          <i class="fas fa-book-open"></i>
+                        </a>
+                        <button class="action-btn" (click)="exportTutorial(tutorial._id)" title="Export">
+                          <i class="fas fa-file-export"></i>
+                        </button>
+                        <button class="action-btn" (click)="toggleTutorialStatus(tutorial)" 
+                                title="{{ tutorial.active ? 'Deactivate' : 'Activate' }}">
+                          <i class="fas" [ngClass]="tutorial.active ? 'fa-toggle-on text-green-600' : 'fa-toggle-off text-gray-400'"></i>
+                        </button>
+                        <button class="action-btn" (click)="confirmDeleteTutorial(tutorial._id)" title="Delete">
+                          <i class="fas fa-trash text-red-500"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-container>
+                <ng-template #noTutorials>
+                  <tr>
+                    <td colspan="6" class="py-8 text-center text-gray-500">
+                      {{ selectedCertification ? 'No tutorials found for this certification' : 'No tutorials found' }}
+                    </td>
+                  </tr>
+                </ng-template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Tutorial Modal -->
+  <div *ngIf="showTutorialModal" class="modal">
+    <div class="modal-overlay" (click)="closeTutorialModal()"></div>
+    <div class="modal-container">
+      <div class="modal-header">
+        <h2>{{ modalTitle }}</h2>
+        <button (click)="closeTutorialModal()" class="modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form #tutorialFormEl="ngForm">
+          <input type="hidden" [(ngModel)]="tutorialForm.id" name="id">
+          
+          <div class="form-group">
+            <label for="tutorial-certification" class="form-label required">Certification</label>
+            <select id="tutorial-certification" [(ngModel)]="tutorialForm.certificationId" name="certificationId" class="form-select" required>
+              <option value="">Select Certification</option>
+              <option *ngFor="let cert of certifications" [value]="cert._id">
+                {{ cert.name }} ({{ cert.code }})
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="tutorial-title" class="form-label required">Tutorial Title</label>
+            <input type="text" id="tutorial-title" [(ngModel)]="tutorialForm.title" name="title" 
+                  class="form-input" placeholder="e.g. Introduction to AWS S3" required>
+          </div>
+          
+          <div class="form-group">
+            <label for="tutorial-description" class="form-label required">Description</label>
+            <textarea id="tutorial-description" [(ngModel)]="tutorialForm.description" name="description" 
+                     class="form-textarea" rows="3" placeholder="Describe the tutorial content..." required></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="tutorial-order" class="form-label">Display Order</label>
+            <input type="number" id="tutorial-order" [(ngModel)]="tutorialForm.order" name="order" 
+                  class="form-input" min="0" max="1000">
+            <div class="mt-1 text-xs text-gray-500">
+              Controls the order tutorials are displayed (lower numbers appear first)
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button (click)="saveTutorial()" class="btn btn-primary">Save Tutorial</button>
+        <button (click)="closeTutorialModal()" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Import Modal -->
+  <div *ngIf="showImportModal" class="modal">
+    <div class="modal-overlay" (click)="closeImportModal()"></div>
+    <div class="modal-container max-w-lg">
+      <div class="modal-header">
+        <h2>Import Tutorial</h2>
+        <button (click)="closeImportModal()" class="modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Upload Tutorial JSON File</label>
+          <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center" 
+               [ngClass]="{'border-blue-500 bg-blue-50': isDragging}" 
+               (dragover)="onDragOver($event)" 
+               (dragleave)="onDragLeave($event)" 
+               (drop)="onDrop($event)">
+            <div *ngIf="!importFile">
+              <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
+              <p class="mb-2 text-sm text-gray-500">Drag and drop your file here, or</p>
+              <label for="file-upload" class="cursor-pointer bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">
+                Browse Files
+              </label>
+              <input id="file-upload" type="file" class="hidden" accept=".json" (change)="onFileSelected($event)">
+            </div>
+            <div *ngIf="importFile" class="flex items-center justify-between">
+              <div class="flex items-center">
+                <i class="fas fa-file-alt text-blue-500 text-2xl mr-3"></i>
+                <div>
+                  <p class="font-medium">{{ importFile.name }}</p>
+                  <p class="text-xs text-gray-500">{{ (importFile.size / 1024).toFixed(2) }} KB</p>
+                </div>
+              </div>
+              <button (click)="clearSelectedFile()" class="text-red-500 hover:text-red-700">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+  
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <i class="fas fa-info-circle text-blue-500"></i>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-blue-700">
+                Upload a JSON file containing the tutorial content and lessons. The file should follow the required format for successful import.
+              </p>
+              <p class="text-sm text-blue-700 mt-2">
+                <a href="#" class="font-medium underline" (click)="downloadTemplateFile($event)">Download template file</a>
+              </p>
+            </div>
+          </div>
+        </div>
+  
+        <div *ngIf="importResult" class="mt-4">
+          <div class="bg-green-50 border-l-4 border-green-500 p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-check-circle text-green-500"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-green-700 font-medium">
+                  Import successful!
+                </p>
+                <ul class="mt-2 text-sm text-green-700 list-disc list-inside">
+                  <li>Tutorial: {{ importResult.tutorial.title }}</li>
+                  <li>Lessons created: {{ importResult.results.lessonsCreated }}</li>
+                  <li>Lessons updated: {{ importResult.results.lessonsUpdated }}</li>
+                  <li>Exercises added: {{ importResult.results.exercisesCreated }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <div *ngIf="importError" class="mt-4">
+          <div class="bg-red-50 border-l-4 border-red-500 p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-circle text-red-500"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-red-700 font-medium">
+                  Import failed: {{ importError }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button (click)="importTutorial()" [disabled]="!importFile || isImporting" class="btn btn-primary">
+          <i *ngIf="isImporting" class="fas fa-circle-notch fa-spin mr-2"></i>
+          {{ isImporting ? 'Importing...' : 'Import Tutorial' }}
+        </button>
+        <button (click)="closeImportModal()" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Delete Confirmation Modal -->
+  <div *ngIf="showDeleteModal" class="modal">
+    <div class="modal-overlay" (click)="closeDeleteModal()"></div>
+    <div class="modal-container max-w-md">
+      <div class="modal-header">
+        <h2>Confirm Deletion</h2>
+        <button (click)="closeDeleteModal()" class="modal-close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p class="text-gray-700">Are you sure you want to delete this tutorial? This action cannot be undone.</p>
+        
+        <div *ngIf="deleteWarning" class="mt-4">
+          <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+            <div class="flex">
+              <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm text-yellow-700">
+                  This tutorial has user progress data. It will be deactivated instead of permanently deleted.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button (click)="deleteTutorial()" class="btn btn-danger">Delete Tutorial</button>
+        <button (click)="closeDeleteModal()" class="btn btn-outline">Cancel</button>
+      </div>
+    </div>
+  </div>
