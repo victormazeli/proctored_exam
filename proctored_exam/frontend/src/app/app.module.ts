@@ -64,12 +64,14 @@ const getToken = () => {
   return localStorage.getItem('token');
 };
 
-// Configure Socket.io with your backend URL
 const config: SocketIoConfig = { 
   url: environment.api,
   options: {
     transports: ['websocket'],
-    autoConnect: false 
+    autoConnect: false,
+    query: {
+      token: getToken()
+    }
   }
 };
 
