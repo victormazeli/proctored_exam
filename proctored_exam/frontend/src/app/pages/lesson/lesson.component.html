@@ -1,0 +1,235 @@
+<!-- lesson.component.html -->
+<div class="bg-white min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+      <!-- Loading state -->
+      <div *ngIf="loading" class="flex justify-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+      
+      <!-- Error state -->
+      <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+        <p>{{ error }}</p>
+        <button (click)="backToTutorial()" class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+          Return to Tutorial
+        </button>
+      </div>
+      
+      <!-- Lesson Content -->
+      <div *ngIf="!loading && !error && lesson">
+        <!-- Navigation and breadcrumbs -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+          <div>
+            <div class="flex items-center mb-2">
+              <button (click)="backToTutorial()" class="text-blue-600 hover:text-blue-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Tutorial
+              </button>
+            </div>
+            
+            <div class="text-sm text-gray-600 mb-1">
+              {{ tutorial?.title }} / Lesson {{ lesson.lessonNumber }}
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ lesson.title }}</h1>
+          </div>
+          
+          <!-- Lesson navigation buttons -->
+          <div class="mt-4 sm:mt-0 flex space-x-2">
+            <button 
+              *ngIf="navigation?.prevLesson" 
+              (click)="navigateToLesson(navigation.prevLesson._id)" 
+              class="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              Previous
+            </button>
+            
+            <button 
+              *ngIf="navigation?.nextLesson" 
+              (click)="navigateToLesson(navigation.nextLesson._id)" 
+              class="px-3 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center">
+              Next
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Progress bar -->
+        <div *ngIf="lesson.progress" class="mb-6">
+          <div class="flex justify-between text-sm mb-1">
+            <span class="text-gray-600">Your Progress</span>
+            <span class="font-medium">{{ lesson.progress.completionPercentage }}%</span>
+          </div>
+          <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div 
+              class="h-full rounded-full" 
+              [style.width.%]="lesson.progress.completionPercentage"
+              [ngClass]="getProgressColor(lesson.progress.completionPercentage)">
+            </div>
+          </div>
+        </div>
+        
+        <!-- Lesson tabs -->
+        <div class="mb-6 border-b border-gray-200">
+          <div class="flex space-x-8">
+            <button 
+              (click)="setActiveTab('content')" 
+              class="py-2 px-1 -mb-px border-b-2 transition-colors"
+              [ngClass]="activeTab === 'content' ? 'text-blue-600 border-blue-600 font-medium' : 'text-gray-500 border-transparent hover:text-gray-700'">
+              Lesson Content
+            </button>
+            
+            <button 
+              *ngIf="practicalExercises && practicalExercises.length > 0"
+              (click)="setActiveTab('exercises')" 
+              class="py-2 px-1 -mb-px border-b-2 transition-colors"
+              [ngClass]="activeTab === 'exercises' ? 'text-blue-600 border-blue-600 font-medium' : 'text-gray-500 border-transparent hover:text-gray-700'">
+              Practical Exercises ({{ practicalExercises.length }})
+            </button>
+          </div>
+        </div>
+        
+        <!-- Lesson content -->
+        <div *ngIf="activeTab === 'content'" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+          <!-- Lesson metadata -->
+          <div class="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div class="flex items-center text-sm text-gray-600">
+              <div class="flex items-center mr-6">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ lesson.estimatedTime || 'Self-paced' }} min
+              </div>
+              
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ lesson.difficulty || 'Intermediate' }}
+              </div>
+            </div>
+            
+            <div *ngIf="lesson.progress?.status === 'completed'" class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+              Completed
+            </div>
+          </div>
+          
+          <!-- Lesson content -->
+          <div class="p-6 lesson-content">
+            <!-- Render sanitized HTML content -->
+            <div *ngIf="contentLoaded" [innerHTML]="lessonContent"></div>
+          </div>
+        </div>
+        
+        <!-- Practical exercises tab -->
+        <div *ngIf="activeTab === 'exercises'" class="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
+          <div class="p-6">
+            <h2 class="text-lg font-semibold text-gray-800 mb-4">Practical Exercises</h2>
+            
+            <div *ngIf="practicalExercises.length === 0" class="text-center py-8 bg-gray-50 rounded-lg">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              <h3 class="text-lg font-medium text-gray-700">No exercises available</h3>
+              <p class="text-gray-500">This lesson doesn't have any practical exercises.</p>
+            </div>
+            <!-- Update the exercises section in lesson.component.html -->
+<div *ngFor="let exercise of practicalExercises; let i = index" class="mb-4 p-4 border border-gray-200 rounded-lg hover:shadow-sm transition">
+  <div class="flex items-center">
+    <!-- Status icon -->
+    <div class="mr-4 flex-shrink-0 w-8 h-8 flex items-center justify-center">
+      <i [class]="getPracticalExerciseStatusIcon(exercise.progress?.status || 'not_started')"></i>
+    </div>
+    
+    <!-- Exercise info -->
+    <div class="flex-grow">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 class="font-medium text-gray-900">{{ i + 1 }}. {{ exercise.title }}</h3>
+          <p class="text-sm text-gray-600 mt-1">{{ exercise.description }}</p>
+        </div>
+        
+        <div class="mt-3 sm:mt-0 flex space-x-2">
+            <button 
+            *ngIf="exercise.progress?.status !== 'completed'"
+            (click)="startExercise(i)" 
+            class="px-3 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
+            {{ exercise.progress?.status === 'in_progress' ? 'Continue Exercise' : 'Start Exercise' }}
+          </button>
+          
+          <button 
+            *ngIf="exercise.progress?.status === 'in_progress'"
+            (click)="completeExercise(i)" 
+            class="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors">
+            Mark Complete
+          </button>
+
+            <button 
+            *ngIf="exercise.progress?.status === 'completed'"
+            (click)="startExercise(i)" 
+            class="px-3 py-1.5 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors">
+            Review Exercise
+            </button>
+        </div>
+      </div>
+      
+      <!-- Progress bar for in-progress exercises -->
+      <div *ngIf="exercise.progress?.status === 'in_progress'" class="mt-3 w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+        <div class="h-full bg-blue-500 rounded-full" [style.width.%]="exercise.progress.completionPercentage || 50"></div>
+      </div>
+      
+      <!-- Completion information -->
+      <div *ngIf="exercise.progress?.status === 'completed'" class="mt-2 text-xs text-gray-500">
+        Completed on {{ exercise.progress.completedAt | date:'medium' }}
+        <span *ngIf="exercise.progress.score" class="ml-2">
+          Score: <span class="font-medium">{{ exercise.progress.score }}%</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+          </div>
+        </div>
+        
+        <!-- Action buttons -->
+        <div class="flex justify-between items-center">
+          <button 
+            *ngIf="navigation?.prevLesson" 
+            (click)="navigateToLesson(navigation.prevLesson._id)" 
+            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Previous Lesson
+          </button>
+          
+          <div>
+            <button 
+              (click)="markAsCompleted()" 
+              class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
+              [disabled]="lesson.progress?.status === 'completed'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              {{ lesson.progress?.status === 'completed' ? 'Completed' : 'Mark as Completed' }}
+            </button>
+          </div>
+          
+          <button 
+            *ngIf="navigation?.nextLesson" 
+            (click)="navigateToLesson(navigation.nextLesson._id)" 
+            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center">
+            Next Lesson
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  

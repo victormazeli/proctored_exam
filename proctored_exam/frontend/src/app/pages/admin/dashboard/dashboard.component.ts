@@ -187,6 +187,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.loadDashboardData();
     this.getActiveExamCount();
+    this.loadTutorialStats();
   }
 
   loadDashboardData(): void {

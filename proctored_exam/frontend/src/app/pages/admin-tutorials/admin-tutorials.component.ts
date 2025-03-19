@@ -48,7 +48,7 @@ export class AdminTutorialsComponent implements OnInit {
   }
   
   loadTutorials(): void {
-    this.tutorialService.getTutorials(this.selectedCertification).subscribe(
+    this.tutorialService.getAdminTutorials(this.selectedCertification).subscribe(
       response => {
         if (response.success) {
           this.tutorials = response.data.tutorials;

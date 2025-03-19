@@ -7,39 +7,54 @@ import { environment } from 'src/environment/environment';
   providedIn: 'root'
 })
 export class LessonService {
-  private baseUrl = `${environment.api}/api/admin`;
+  private baseUrl = `${environment.api}/api`;
   
   constructor(private http: HttpClient) {}
   
   getLessons(tutorialId: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/tutorials/${tutorialId}/lessons`);
+    return this.http.get<any>(`${this.baseUrl}/admin/tutorials/${tutorialId}/lessons`);
   }
   
   getLesson(id: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/admin/lessons/${id}`);
+  }
+
+  getLessonDetails(id: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/lessons/${id}`);
+  }
+
+  updateLessonProgress(id: string, progressData: any): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/lessons/${id}/progress`, progressData);
   }
   
   createLesson(lessonData: any): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/lessons`, lessonData);
+    return this.http.post<any>(`${this.baseUrl}/admin/lessons`, lessonData);
   }
   
   updateLesson(id: string, lessonData: any): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/lessons/${id}`, lessonData);
+    return this.http.put<any>(`${this.baseUrl}/admin/lessons/${id}`, lessonData);
   }
   
   deleteLesson(id: string): Observable<any> {
-    return this.http.delete<any>(`${this.baseUrl}/lessons/${id}`);
+    return this.http.delete<any>(`${this.baseUrl}/admin/lessons/${id}`);
   }
   
   updateLessonStatus(id: string, active: boolean): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/lessons/${id}`, { active });
+    return this.http.put<any>(`${this.baseUrl}/admin/lessons/${id}`, { active });
   }
   
   reorderLessons(tutorialId: string, lessonOrder: any[]): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/tutorials/${tutorialId}/reorder-lessons`, { lessonOrder });
+    return this.http.post<any>(`${this.baseUrl}/admin/tutorials/${tutorialId}/reorder-lessons`, { lessonOrder });
   }
   
   checkLessonUsage(id: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/lessons/${id}/usage`);
+    return this.http.get<any>(`${this.baseUrl}/admin/lessons/${id}/usage`);
   }
+
+completeExercise(lessonId: string, exerciseIndex: number, completionData: any): Observable<any> {
+  return this.http.post<any>(
+    `${this.baseUrl}/lessons/${lessonId}/exercises/${exerciseIndex}/complete`, 
+    completionData
+  )
+}
 }

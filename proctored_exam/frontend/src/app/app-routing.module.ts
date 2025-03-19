@@ -22,6 +22,10 @@ import { StudentDashboardComponent } from './pages/student-dashboard/student-das
 import { AdminLessonsComponent } from './pages/admin-lessons/admin-lessons.component';
 import { AdminTutorialAnalyticsComponent } from './pages/admin-tutorial-analytics/admin-tutorial-analytics.component';
 import { AdminTutorialsComponent } from './pages/admin-tutorials/admin-tutorials.component';
+import { ExerciseComponent } from './pages/exercise/exercise.component';
+import { TutorialHubComponent } from './pages/tutorial-hub/tutorial-hub.component';
+import { TutorialDetailComponent } from './pages/tutorial-detail/tutorial-detail.component';
+import { LessonComponent } from './pages/lesson/lesson.component';
 
 const routes: Routes = [
   {
@@ -47,6 +51,11 @@ const routes: Routes = [
     { path: 'exams/:examId/session', component: ExamComponent },
     { path: 'exams/:examId/instructions', component: ExamInstructionsComponent },
     { path: 'exams/results/:attemptId', component: ExamResultsComponent },
+    { path: 'exercises/:id', component: ExerciseComponent },
+    { path: 'tutorials', component: TutorialHubComponent },
+    { path: 'tutorials/:id', component: TutorialDetailComponent },
+    { path: 'lessons/:id', component: LessonComponent },
+    { path: 'exercises', component: ExerciseComponent },
   ] 
 },
 {

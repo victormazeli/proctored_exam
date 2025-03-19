@@ -689,3 +689,28 @@ exports.getLessonPracticalExercises = async (lessonId) => {
       throw error;
     }
   };
+
+
+exports.checkTutorialHasProgress = async (tutorialId) => {
+  try {
+    // Check if tutorial exists
+    const tutorial = await Tutorial.findById(tutorialId);
+    if (!tutorial) {
+      throw new Error('Tutorial not found');
+    }
+    
+    // Check if there is any user progress for this tutorial
+    const progressCount = await UserProgress.countDocuments({
+      tutorialId,
+      $or: [
+        { status: 'in_progress' },
+        { status: 'completed' }
+      ]
+    });
+    
+    return progressCount > 0;
+  } catch (error) {
+    console.error('Error checking tutorial progress:', error);
+    throw error;
+  }
+};

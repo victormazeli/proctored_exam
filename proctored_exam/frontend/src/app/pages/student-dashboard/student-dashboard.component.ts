@@ -4,6 +4,7 @@ import { ExamService } from 'src/app/services/exam.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { AnalyticService } from '../../services/analytic.service';
 import { LeaderboardService } from 'src/app/services/leaderboard.service';
+import { TutorialService } from 'src/app/services/tutorial.service';
 
 
 interface Badge {
@@ -23,6 +24,8 @@ interface Badge {
 export class StudentDashboardComponent implements OnInit {
   // User info
   currentUser: any;
+
+  inProgressTutorials: any[] = [];
   
   // Performance data
   overallPerformance: any = {
@@ -60,6 +63,7 @@ export class StudentDashboardComponent implements OnInit {
     private analyticService: AnalyticService,
     private leaderboardService: LeaderboardService,
     private examService: ExamService,
+    private tutorialService: TutorialService,
     private router: Router
   ) { }
 
@@ -247,4 +251,30 @@ addMissingBadges(): void {
   logout(): void {
     this.authService.logout();
   }
+
+  // Add these methods
+loadInProgressTutorials(): void {
+  this.tutorialService.getInProgressTutorials().subscribe(
+    response => {
+      if (response.success) {
+        this.inProgressTutorials = response.data;
+      }
+    },
+    error => {
+      console.error('Error loading in-progress tutorials:', error);
+    }
+  );
+}
+
+navigateToTutorial(id: string): void {
+  this.router.navigate(['/tutorials', id]);
+}
+
+// Reuse the existing function or add it if it doesn't exist
+getProgressColor(percentage: number): string {
+  if (percentage >= 80) return 'bg-green-500';
+  if (percentage >= 60) return 'bg-blue-500';
+  if (percentage >= 40) return 'bg-yellow-500';
+  return 'bg-red-500';
+}
 }

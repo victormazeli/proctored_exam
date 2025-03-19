@@ -37,7 +37,7 @@ exports.importTutorial = async (req, res) => {
       fs.unlinkSync(req.file.path);
     }
     
-    return res.status(400).json({
+    return res.status(500).json({
       success: false,
       message: err.message || 'Failed to import tutorial'
     });

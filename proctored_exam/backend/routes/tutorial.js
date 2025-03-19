@@ -22,6 +22,8 @@ router.post('/exams/:attemptId/recommendations', authorizeRoles(['admin', 'user'
 
 // Admin routes
 router.get('/admin/tutorials', authorizeRoles(['admin']), tutorialAdminController.getTutorials);
+router.get('/admin/tutorials/stats', authorizeRoles(['admin']), tutorialAdminController.getTutorialStats);
+
 router.get('/admin/tutorials/:id', authorizeRoles(['admin']), tutorialAdminController.getTutorial);
 router.post('/admin/tutorials', authorizeRoles(['admin']), tutorialAdminController.createTutorial);
 router.put('/admin/tutorials/:id', authorizeRoles(['admin']), tutorialAdminController.updateTutorial);
@@ -35,26 +37,29 @@ router.delete('/admin/lessons/:id', authorizeRoles(['admin']), tutorialAdminCont
 
 router.post('/admin/upload-image', authorizeRoles(['admin']), tutorialAdminController.uploadImage, tutorialAdminController.uploadLessonImage);
 router.post('/admin/tutorials/:tutorialId/reorder-lessons', authorizeRoles(['admin']), tutorialAdminController.reorderLessons);
+router.get('/admin/tutorials/:tutorialId/usage', 
+  authorizeRoles(['admin']), 
+  tutorialAdminController.checkTutorialUsage
+)
 router.post('/admin/certifications/:certificationId/reorder-tutorials', authorizeRoles(['admin']), tutorialAdminController.reorderTutorials);
 router.get('/admin/tutorials/:tutorialId/analytics', authorizeRoles(['admin']), tutorialAdminController.getTutorialAnalytics);
 
-router.get('/admin/tutorials/stats', authorizeRoles(['admin']), tutorialAdminController.getTutorialStats);
 
 // Import a single tutorial
 router.post(
-    '/admin/tutorials/import',
-    authorizeRoles(['admin']),
-    tutorialImportService.upload.single('tutorialFile'),
-    tutorialImportController.importTutorial
-  );
-  
-  // Batch import multiple tutorials
-  router.post(
-    '/admin/tutorials/batch-import',
-    authorizeRoles(['admin']),
-    tutorialImportService.upload.array('tutorialFiles', 20), // Max 20 files
-    tutorialImportController.batchImportTutorials
-  );
+  '/admin/tutorials/import',
+  authorizeRoles(['admin']),
+  tutorialImportService.upload.single('tutorialFile'),
+  tutorialImportController.importTutorial
+);
+
+// Batch import multiple tutorials
+router.post(
+  '/admin/tutorials/batch-import',
+  authorizeRoles(['admin']),
+  tutorialImportService.upload.array('tutorialFiles', 20), // Max 20 files
+  tutorialImportController.batchImportTutorials
+);
   
   // Export a tutorial
   router.get(

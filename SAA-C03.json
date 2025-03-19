@@ -1,0 +1,261 @@
+{
+  "metadata": {
+    "title": "AWS Solutions Architect Associate (SAA-C03) Complete Study Guide",
+    "description": "100% exam-aligned guide covering all domains: Resilient Architectures, Security, Cost Optimization, Hybrid Cloud, and Advanced Services.",
+    "certificationId": "AWS-SAA-C03"
+  },
+  "lessons": [
+    {
+      "title": "Designing Resilient Architectures",
+      "content": "# High Availability & Disaster Recovery\n\n- **Multi-AZ/Region Deployments**: RDS, DynamoDB Global Tables, S3 Cross-Region Replication.\n- **Disaster Recovery**: Pilot Light vs. Warm Standby vs. Multi-Region Active-Active.\n- **AWS Backup**: Centralized backup for EC2, EBS, RDS, DynamoDB.\n- **Route 53**: Failover routing, health checks, weighted policies.",
+      "practicalExercises": [
+        {
+          "title": "Deploy a Multi-Region Active-Active Architecture",
+          "description": "Use DynamoDB Global Tables and Route 53 latency routing.",
+          "instructions": "1. Create DynamoDB table with Global Tables enabled\n2. Deploy EC2 instances in 2 regions\n3. Configure Route 53 latency-based routing\n4. Test failover",
+          "expectedOutput": "Active-active setup with automatic regional failover.",
+          "solution": "1. Enable Global Tables in DynamoDB\n2. Use Route 53 → Latency Routing Policy\n3. Simulate regional failure with health checks.",
+          "hints": [
+            { "text": "Test with `curl` from different regions.", "order": 1 }
+          ],
+          "difficulty": "advanced",
+          "estimatedTime": 90
+        }
+      ]
+    },
+    {
+      "title": "AWS Well-Architected Framework & Best Practices (NEW)",
+      "content": "# Six Pillars Deep Dive\n\n- **Operational Excellence**: CI/CD pipelines (CodePipeline), infrastructure as code (CDK).\n- **Security**: IAM roles, encryption (KMS), AWS Organizations SCPs.\n- **Reliability**: Auto Scaling, Multi-AZ, CloudFormation rollback.\n- **Performance Efficiency**: GP3 volumes, Lambda@Edge.\n- **Cost Optimization**: Spot Fleets, Savings Plans.\n- **Sustainability**: Serverless architectures, ARM-based Graviton instances.",
+      "practicalExercises": [
+        {
+          "title": "Perform a Well-Architected Review",
+          "description": "Use AWS Well-Architected Tool to assess a workload.",
+          "instructions": "1. Open AWS Well-Architected Tool\n2. Create a workload\n3. Answer questions across all six pillars\n4. Generate recommendations",
+          "expectedOutput": "Report highlighting security gaps and cost-saving actions.",
+          "solution": "1. Prioritize implementing Reliability and Security recommendations.",
+          "hints": [
+            { "text": "Use the tool’s API for automated reviews.", "order": 1 }
+          ],
+          "difficulty": "intermediate",
+          "estimatedTime": 45
+        }
+      ]
+    },
+    {
+      "title": "Advanced Security & Governance (NEW)",
+      "content": "# Security & Compliance\n\n- **AWS Organizations**: Multi-account management, SCPs (e.g., deny non-approved regions).\n- **AWS Control Tower**: Govern multi-account environments.\n- **AWS Config**: Track resource compliance (e.g., unencrypted S3 buckets).\n- **AWS Shield Advanced**: DDoS protection for ELB/CloudFront.\n- **Amazon Detective**: Investigate security incidents.",
+      "practicalExercises": [
+        {
+          "title": "Enforce S3 Encryption with AWS Config",
+          "description": "Create a rule to flag unencrypted S3 buckets.",
+          "instructions": "1. Enable AWS Config\n2. Create a custom rule using AWS Lambda\n3. Evaluate compliance\n4. Remediate non-compliant buckets",
+          "expectedOutput": "All S3 buckets encrypted (SSE-S3 or KMS).",
+          "solution": "1. Use AWS Config → Rules → Create Rule\n2. Use Lambda code to check encryption status.",
+          "hints": [
+            { "text": "Use managed AWS Config rules if available.", "order": 1 }
+          ],
+          "difficulty": "intermediate",
+          "estimatedTime": 40
+        }
+      ]
+    },
+    {
+      "title": "Infrastructure as Code (IaC) with AWS CDK (NEW)",
+      "content": "# IaC Best Practices\n\n- **AWS CDK**: Define infrastructure in Python/TypeScript.\n- **CloudFormation**: YAML/JSON templates for resource provisioning.\n- **SAM**: Serverless application deployment.",
+      "practicalExercises": [
+        {
+          "title": "Deploy a VPC with AWS CDK",
+          "description": "Define and deploy a VPC using CDK.",
+          "instructions": "1. Install CDK\n2. Write TypeScript code for VPC with public/private subnets\n3. Run `cdk deploy`\n4. Verify in AWS Console",
+          "expectedOutput": "VPC deployed with CDK.",
+          "solution": "1. Use `@aws-cdk/aws-ec2` library\n2. Define CIDR blocks and subnets.",
+          "hints": [
+            { "text": "Test with `cdk synth` before deploying.", "order": 1 }
+          ],
+          "difficulty": "advanced",
+          "estimatedTime": 60
+        }
+      ]
+    },
+    {
+      "title": "Hybrid Architectures & Storage Gateway (UPDATED)",
+      "content": "# Hybrid Cloud\n\n- **Storage Gateway**: Sync on-premises data to S3/Glacier.\n- **AWS DataSync**: Accelerate data transfers.\n- **FSx for Windows**: Managed file storage for hybrid workloads.",
+      "practicalExercises": [
+        {
+          "title": "Sync On-Premises Data to S3 via Storage Gateway",
+          "description": "Configure a File Gateway for hybrid storage.",
+          "instructions": "1. Deploy Storage Gateway VM on-premises\n2. Create S3 bucket\n3. Map S3 bucket as NFS share\n4. Transfer files and verify in S3",
+          "expectedOutput": "On-premises files replicated to S3.",
+          "solution": "1. Use Storage Gateway → File Gateway → Map to S3.",
+          "hints": [
+            { "text": "Use `aws s3 ls` to verify uploads.", "order": 1 }
+          ],
+          "difficulty": "intermediate",
+          "estimatedTime": 60
+        }
+      ]
+    },
+    {
+      "title": "Data Analytics & Advanced Services (UPDATED)",
+      "content": "# Big Data & Streaming\n\n- **Amazon MSK**: Managed Apache Kafka for real-time data.\n- **AWS Glue DataBrew**: Clean/transform data visually.\n- **Redshift Serverless**: Auto-scaling data warehouse.",
+      "practicalExercises": [
+        {
+          "title": "Query Data with Redshift Serverless",
+          "description": "Run analytics on S3 data using Redshift.",
+          "instructions": "1. Create Redshift Serverless namespace\n2. Load data from S3\n3. Write SQL queries\n4. Visualize with QuickSight",
+          "expectedOutput": "Redshift Serverless dashboard with query results.",
+          "solution": "1. Use Redshift → Serverless → Query S3 via Spectrum.",
+          "hints": [
+            { "text": "Use IAM roles for Redshift-S3 access.", "order": 1 }
+          ],
+          "difficulty": "advanced",
+          "estimatedTime": 60
+        }
+      ]
+    },
+    {
+      "title": "Monitoring, Logging & X-Ray (UPDATED)",
+      "content": "# Observability Deep Dive\n\n- **X-Ray**: Trace microservices APIs.\n- **CloudWatch Logs Insights**: Query logs with SQL-like syntax.\n- **VPC Flow Logs**: Monitor network traffic.",
+      "practicalExercises": [
+        {
+          "title": "Trace Microservices with X-Ray",
+          "description": "Instrument a Lambda-API Gateway app with X-Ray.",
+          "instructions": "1. Enable X-Ray in Lambda\n2. Deploy sample app\n3. Analyze service map\n4. Identify latency bottlenecks",
+          "expectedOutput": "X-Ray service map showing API-Lambda-DynamoDB flow.",
+          "solution": "1. Use AWS X-Ray SDK in Lambda code.\n2. View traces in X-Ray Console.",
+          "hints": [
+            { "text": "Add annotations to segment requests.", "order": 1 }
+          ],
+          "difficulty": "intermediate",
+          "estimatedTime": 45
+        }
+      ]
+    },
+    {
+      "title": "High-Performing Architectures (UPDATED)",
+      "content": "# Scalability & Performance\n\n- **Auto Scaling**: Dynamic scaling for EC2, ECS, and Spot Fleets.\n- **Caching**: CloudFront (with Lambda@Edge), ElastiCache (Redis/Memcached).\n- **Content Delivery**: S3 Transfer Acceleration, Global Accelerator.\n- **Graviton Instances**: ARM-based instances for cost-performance optimization.",
+      "practicalExercises": [
+        {
+          "title": "Deploy a Spot Fleet with Auto Scaling",
+          "description": "Optimize costs using Spot Instances.",
+          "instructions": "1. Navigate to EC2 → Spot Requests\n2. Create a Spot Fleet with mixed instance types\n3. Configure Auto Scaling policies\n4. Test termination/replacement of Spot Instances",
+          "expectedOutput": "Cost-effective fleet scaling with Spot Instances.",
+          "solution": "1. Use EC2 → Spot Requests → Define capacity requirements.\n2. Set up termination notifications.",
+          "hints": [
+            { "text": "Use instance diversification to avoid interruptions.", "order": 1 }
+          ],
+          "difficulty": "advanced",
+          "estimatedTime": 60
+        }
+      ]
+    },
+    {
+      "title": "Secure Applications & Architectures (UPDATED)",
+      "content": "# Advanced Security\n\n- **AWS Shield Advanced**: DDoS protection for CloudFront/ELB.\n- **AWS WAF**: Block SQLi, XSS, and geographic threats.\n- **Secrets Manager**: Rotate RDS credentials automatically.\n- **Certificate Manager (ACM)**: Free TLS certificates for HTTPS.",
+      "practicalExercises": [
+        {
+          "title": "Configure AWS WAF for CloudFront",
+          "description": "Block malicious IPs and SQL injection attacks.",
+          "instructions": "1. Create WAF Web ACL\n2. Add rules (SQLi, IP blacklist)\n3. Associate ACL with CloudFront distribution\n4. Test blocked requests",
+          "expectedOutput": "CloudFront distribution protected by WAF rules.",
+          "solution": "1. Use AWS WAF → Create Web ACL → Add managed rules.\n2. Test with `curl` from blocked IP.",
+          "hints": [
+            { "text": "Use AWS’s IP reputation list for automated blocking.", "order": 1 }
+          ],
+          "difficulty": "intermediate",
+          "estimatedTime": 45
+        }
+      ]
+    },
+    {
+      "title": "Cost-Optimized Architectures (UPDATED)",
+      "content": "# Cost Optimization Strategies\n\n- **Spot Fleets**: Mix Spot/On-Demand instances.\n- **Savings Plans**: Commit to 1/3-year usage for discounts.\n- **S3 Intelligent-Tiering**: Auto-tier objects based on access patterns.\n- **Trusted Advisor**: Idle load balancer checks, underutilized EBS volumes.",
+      "practicalExercises": [
+        {
+          "title": "Optimize EBS Volumes with GP3",
+          "description": "Migrate gp2 volumes to gp3 for cost savings.",
+          "instructions": "1. Identify gp2 volumes in EC2 Console\n2. Create gp3 snapshots\n3. Replace volumes\n4. Validate performance",
+          "expectedOutput": "Reduced EBS costs with gp3 volumes.",
+          "solution": "1. Use EC2 → Volumes → Modify Volume Type.\n2. Monitor IOPS/throughput in CloudWatch.",
+          "hints": [
+            { "text": "Use CloudWatch to baseline performance.", "order": 1 }
+          ],
+          "difficulty": "intermediate",
+          "estimatedTime": 30
+        }
+      ]
+    },
+    {
+      "title": "Deployment & Migration Strategies (UPDATED)",
+      "content": "# CI/CD & Modernization\n\n- **AWS CDK**: Infrastructure as Code (Python/TypeScript).\n- **Elastic Beanstalk**: Managed app deployment (PaaS).\n- **App Runner**: Fully managed container deployment.\n- **Migration Hub**: Track on-premises to cloud migrations.",
+      "practicalExercises": [
+        {
+          "title": "Migrate an On-Premises DB to RDS with DMS",
+          "description": "Replicate a MySQL database to RDS.",
+          "instructions": "1. Set up DMS replication instance\n2. Configure source (on-premises) and target (RDS) endpoints\n3. Create replication task\n4. Monitor CDC (Change Data Capture)",
+          "expectedOutput": "RDS instance synced with on-premises database.",
+          "solution": "1. Use DMS → Create Replication Task → Ongoing replication.\n2. Validate data consistency.",
+          "hints": [
+            { "text": "Test with a small dataset first.", "order": 1 }
+          ],
+          "difficulty": "advanced",
+          "estimatedTime": 90
+        }
+      ]
+    },
+    {
+      "title": "Advanced Networking (UPDATED)",
+      "content": "# VPC & Connectivity\n\n- **Transit Gateway**: Hub-and-spoke VPC connectivity.\n- **PrivateLink**: Securely expose services without public IPs.\n- **VPC Endpoints (Gateway/Interface)**: Private S3/DynamoDB access.\n- **Route 53 Resolver**: Hybrid DNS resolution.",
+      "practicalExercises": [
+        {
+          "title": "Configure AWS PrivateLink for an S3 Bucket",
+          "description": "Expose S3 privately via VPC Endpoint.",
+          "instructions": "1. Create VPC Endpoint (Gateway) for S3\n2. Update route tables\n3. Restrict bucket access via endpoint policy\n4. Test access from private subnet",
+          "expectedOutput": "S3 accessible only via VPC Endpoint.",
+          "solution": "1. Use VPC → Endpoints → Create S3 Gateway Endpoint.\n2. Attach bucket policy restricting access to the endpoint.",
+          "hints": [
+            { "text": "Use `aws s3 ls` from an EC2 instance to test.", "order": 1 }
+          ],
+          "difficulty": "intermediate",
+          "estimatedTime": 45
+        }
+      ]
+    },
+    {
+      "title": "Serverless Architectures (UPDATED)",
+      "content": "# Serverless Patterns\n\n- **Step Functions**: Coordinate Lambda functions for workflows.\n- **EventBridge**: Event-driven serverless apps.\n- **SQS/SNS**: Decouple microservices.\n- **Lambda Destinations**: Asynchronous invocation handling.",
+      "practicalExercises": [
+        {
+          "title": "Orchestrate a Workflow with Step Functions",
+          "description": "Build a loan approval state machine.",
+          "instructions": "1. Define states (Choice, Lambda, Wait) in ASL\n2. Deploy with Step Functions\n3. Test approval/rejection paths",
+          "expectedOutput": "Visual workflow executing Lambda functions based on inputs.",
+          "solution": "1. Use Step Functions → Design state machine → Integrate Lambda.\n2. Test with JSON payloads.",
+          "hints": [
+            { "text": "Use the `Choice` state for conditional logic.", "order": 1 }
+          ],
+          "difficulty": "advanced",
+          "estimatedTime": 60
+        }
+      ]
+    },
+    {
+      "title": "Monitoring & Logging (UPDATED)",
+      "content": "# Full Observability\n\n- **CloudWatch Synthetics**: Monitor API endpoints with canaries.\n- **CloudTrail Lake**: Query audit logs across accounts.\n- **VPC Flow Logs**: Analyze network traffic patterns.\n- **X-Ray Insights**: Auto-detect anomalies in traces.",
+      "practicalExercises": [
+        {
+          "title": "Create a CloudWatch Synthetic Canary",
+          "description": "Monitor a web API for uptime.",
+          "instructions": "1. Navigate to CloudWatch → Synthetics\n2. Create canary with Puppeteer script\n3. Set 5-minute frequency\n4. Trigger alerts on failure",
+          "expectedOutput": "Canary monitoring API endpoint availability.",
+          "solution": "1. Use sample script to ping API Gateway.\n2. Configure SNS alerts.",
+          "hints": [
+            { "text": "Test with a public REST API first.", "order": 1 }
+          ],
+          "difficulty": "intermediate",
+          "estimatedTime": 30
+        }
+      ]
+    }
+  ]
+}

@@ -12,7 +12,7 @@ export class TutorialService {
   
   constructor(private http: HttpClient) {}
   
-  getTutorials(certificationId?: string): Observable<any> {
+  getAdminTutorials(certificationId?: string): Observable<any> {
     let httpParams = new HttpParams();
 
     if (certificationId) {
@@ -20,9 +20,22 @@ export class TutorialService {
     }
     return this.http.get<any>(`${this.baseUrl}/admin/tutorials`, { params: httpParams });
   }
+
+  getTutorials(certificationId?: string): Observable<any> {
+    let httpParams = new HttpParams();
+
+    if (certificationId) {
+        httpParams = httpParams.set('certification', certificationId);
+    }
+    return this.http.get<any>(`${this.baseUrl}/tutorials`, { params: httpParams });
+  }
   
   getTutorial(id: string): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/admin/tutorials/${id}`);
+  }
+
+  getTutorialDetails(id: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/tutorials/${id}`);
   }
   
   createTutorial(tutorialData: any): Observable<any> {
@@ -52,4 +65,10 @@ export class TutorialService {
 getTutorialStats(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/admin/tutorials/stats`);
   }
+
+getInProgressTutorials(): Observable<any> {
+  return this.http.get<any>(`${this.baseUrl}/user/progress`)
+}
+
+
 }

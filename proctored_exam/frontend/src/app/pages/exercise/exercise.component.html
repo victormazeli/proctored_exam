@@ -1,0 +1,132 @@
+<div class="bg-white min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+      <!-- Loading state -->
+      <div *ngIf="loading" class="flex justify-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+      
+      <!-- Error state -->
+      <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+        <p>{{ error }}</p>
+        <button (click)="goBack()" class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+          Return to Lesson
+        </button>
+      </div>
+      
+      <!-- Exercise Content -->
+      <div *ngIf="!loading && !error && exercise">
+        <!-- Navigation and breadcrumbs -->
+        <div class="flex justify-between items-center mb-6">
+          <div>
+            <div class="flex items-center mb-2">
+              <button (click)="goBack()" class="text-blue-600 hover:text-blue-800 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Lesson
+              </button>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ exercise.title }}</h1>
+            <p class="text-gray-600">{{ exercise.description }}</p>
+          </div>
+          
+          <div class="px-3 py-1.5 rounded-lg flex items-center text-sm" 
+               [ngClass]="{
+                 'bg-green-100 text-green-800': exercise.difficulty === 'beginner',
+                 'bg-yellow-100 text-yellow-800': exercise.difficulty === 'intermediate',
+                 'bg-orange-100 text-orange-800': exercise.difficulty === 'advanced',
+                 'bg-red-100 text-red-800': exercise.difficulty === 'expert'
+               }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            {{ exercise.difficulty.charAt(0).toUpperCase() + exercise.difficulty.slice(1) }}
+          </div>
+        </div>
+        
+        <!-- Exercise content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <!-- Instructions panel -->
+          <div class="lg:col-span-2 bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+              <h2 class="font-semibold text-gray-800">Instructions</h2>
+              <div class="text-sm text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ exercise.estimatedTime || 15 }} min
+              </div>
+            </div>
+            
+            <div class="p-6 lesson-content">
+              <div [innerHTML]="instructionsContent"></div>
+              
+              <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+                <h3 class="text-sm font-medium text-blue-800 mb-2">Expected Output</h3>
+                <p class="text-blue-700">{{ exercise.expectedOutput }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Hints and help panel -->
+          <div class="bg-white rounded-lg shadow-sm border border-gray-200">
+            <div class="p-4 border-b border-gray-200 bg-gray-50">
+              <h2 class="font-semibold text-gray-800">Help & Resources</h2>
+            </div>
+            
+            <div class="p-4">
+              <!-- Hints section -->
+              <div *ngIf="exercise.hints && exercise.hints.length > 0" class="mb-6">
+                <h3 class="text-sm font-medium text-gray-700 mb-3">Hints</h3>
+                
+                <div *ngFor="let hint of exercise.hints.slice(0, currentHintIndex + 1); let i = index" 
+                     class="mb-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                  <p class="text-sm text-yellow-800">{{ hint.text }}</p>
+                </div>
+                
+                <button 
+                  *ngIf="currentHintIndex < exercise.hints.length - 1"
+                  (click)="showNextHint()" 
+                  class="mt-2 px-3 py-1.5 text-sm bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 transition-colors">
+                  Show Next Hint
+                </button>
+              </div>
+              
+              <!-- Solution toggle -->
+              <div class="mb-4">
+                <button 
+                  (click)="toggleSolution()" 
+                  class="w-full px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  {{ showSolution ? 'Hide Solution' : 'Show Solution' }}
+                </button>
+              </div>
+              
+              <!-- Solution content -->
+              <div *ngIf="showSolution" class="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">Solution</h3>
+                <div class="lesson-content" [innerHTML]="solutionContent"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Exercise completion buttons -->
+        <div class="flex justify-end space-x-4">
+          <button 
+            (click)="goBack()" 
+            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+            Cancel
+          </button>
+          
+          <button 
+            (click)="completeExercise(true, 100)" 
+            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+            Mark as Completed
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,6 +1,8 @@
 const Tutorial = require('../models/tutorial');
 const Lesson = require('../models/lesson');
+const UserProgress = require('../models/userProgress');
 const Certification = require('../models/certification');
+const tutorialService = require('../services/tutorialService');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -256,6 +258,7 @@ exports.updateTutorial = async (req, res) => {
 /**
  * Delete a tutorial
  */
+
 exports.deleteTutorial = async (req, res) => {
   try {
     const { id } = req.params;
@@ -269,17 +272,25 @@ exports.deleteTutorial = async (req, res) => {
       });
     }
     
-    // Check if tutorial has lessons
-    const lessonCount = await Lesson.countDocuments({ tutorialId: id });
-    if (lessonCount > 0) {
+    // Check if tutorial has any user progress
+    const hasProgress = await tutorialService.checkTutorialHasProgress(id);
+    
+    if (hasProgress) {
       // Don't delete, just deactivate
       tutorial.active = false;
       await tutorial.save();
       
       return res.status(200).json({
         success: true,
-        message: 'Tutorial has lessons. It has been deactivated instead of deleted.'
+        message: 'Tutorial has active user progress. It has been deactivated instead of deleted.'
       });
+    }
+    
+    // Check if tutorial has lessons
+    const lessonCount = await Lesson.countDocuments({ tutorialId: id });
+    if (lessonCount > 0) {
+      // Delete all associated lessons first
+      await Lesson.deleteMany({ tutorialId: id });
     }
     
     // Delete tutorial
@@ -294,6 +305,37 @@ exports.deleteTutorial = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Failed to delete tutorial'
+    });
+  }
+};
+
+
+
+exports.checkTutorialUsage = async (req, res) => {
+  try {
+    const { tutorialId } = req.params;
+    
+    if (!tutorialId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Tutorial ID is required'
+      });
+    }
+    
+    // Check if tutorial has any user progress
+    const hasProgress = await tutorialService.checkTutorialHasProgress(tutorialId);
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        hasProgress
+      }
+    });
+  } catch (err) {
+    console.error('Error checking tutorial usage:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to check tutorial usage'
     });
   }
 };

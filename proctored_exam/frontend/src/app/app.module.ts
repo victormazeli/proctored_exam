@@ -54,6 +54,10 @@ import { AnalyticService } from './services/analytic.service';
 import { AdminTutorialsComponent } from './pages/admin-tutorials/admin-tutorials.component';
 import { AdminLessonsComponent } from './pages/admin-lessons/admin-lessons.component';
 import { AdminTutorialAnalyticsComponent } from './pages/admin-tutorial-analytics/admin-tutorial-analytics.component';
+import { TutorialHubComponent } from './pages/tutorial-hub/tutorial-hub.component';
+import { TutorialDetailComponent } from './pages/tutorial-detail/tutorial-detail.component';
+import { LessonComponent } from './pages/lesson/lesson.component';
+import { ExerciseComponent } from './pages/exercise/exercise.component';
 
 
 const getToken = () => {
@@ -111,7 +115,12 @@ const config: SocketIoConfig = {
     StudentDashboardComponent,
     AdminTutorialsComponent,
     AdminLessonsComponent,
-    AdminTutorialAnalyticsComponent
+    AdminTutorialAnalyticsComponent,
+    TutorialHubComponent,
+    TutorialHubComponent,
+    TutorialDetailComponent,
+    LessonComponent,
+    ExerciseComponent
   ],
   imports: [
     BrowserAnimationsModule,
