@@ -2,7 +2,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { trigger, state, style, transition, animate } from '@angular/animations';
-import { NotificationService, Notification, NotificationType  } from 'src/app/services/notification.service';
+import { NotificationService, Notification, NotificationType } from 'src/app/services/notification.service';
+
 
 @Component({
   selector: 'app-notification',

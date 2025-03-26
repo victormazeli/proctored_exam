@@ -1,0 +1,124 @@
+<!-- tutorial-hub.component.html -->
+<div class="bg-white min-h-screen">
+    <div class="container mx-auto px-4 py-6">
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Learning Hub</h1>
+          <p class="text-gray-600">Self-paced tutorials to help you master certification topics</p>
+        </div>
+        
+        <div class="mt-4 sm:mt-0 flex items-center">
+          <div class="relative mr-4">
+            <select 
+              [(ngModel)]="selectedCertification" 
+              (change)="onCertificationFilterChange()" 
+              class="bg-white border border-gray-300 rounded-md py-2 pl-3 pr-10 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              <option value="">All Certifications</option>
+              <option *ngFor="let cert of certifications" [value]="cert._id">
+                {{ cert.name }} ({{ cert.code }})
+              </option>
+            </select>
+          </div>
+          
+          <a routerLink="/dashboard" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            Dashboard
+          </a>
+        </div>
+      </div>
+      
+      <!-- Loading state -->
+      <div *ngIf="loading" class="flex justify-center py-12">
+        <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+      
+      <!-- Error state -->
+      <div *ngIf="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+        <p>{{ error }}</p>
+        <button (click)="loadTutorials()" class="mt-2 text-sm text-red-600 hover:text-red-800 underline">
+          Try Again
+        </button>
+      </div>
+      
+      <!-- Empty state -->
+      <div *ngIf="!loading && !error && (!tutorials || tutorials.length === 0)" class="text-center py-16 bg-gray-50 rounded-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+        <h3 class="text-lg font-medium text-gray-700 mb-2">No tutorials available</h3>
+        <p class="text-gray-500 mb-4">{{ selectedCertification ? 'No tutorials found for the selected certification.' : 'Check back soon for tutorial content.' }}</p>
+        <button *ngIf="selectedCertification" (click)="selectedCertification = ''; loadTutorials()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+          View All Tutorials
+        </button>
+      </div>
+      
+      <!-- Tutorials Grid -->
+      <div *ngIf="!loading && !error && tutorials && tutorials.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div *ngFor="let tutorial of tutorials; let i = index" class="bg-white rounded-lg shadow overflow-hidden border border-gray-200 hover:shadow-lg transition">
+          <!-- Card header with certification info -->
+          <div class="bg-gradient-to-r p-1" [ngClass]="getCategoryColor(i)">
+            <div class="bg-white rounded-t-lg px-5 py-4">
+              <div class="flex justify-between items-center">
+                <h3 class="text-lg font-bold text-gray-900 truncate">{{ tutorial.title }}</h3>
+                <span class="px-2 py-1 bg-gray-100 text-xs rounded-full text-gray-700">
+                  {{ tutorial.certification?.code || 'General' }}
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Card body -->
+          <div class="px-5 py-4">
+            <p class="text-gray-600 text-sm mb-4 h-20 overflow-hidden">{{ tutorial.description }}</p>
+            
+            <!-- Progress indicators -->
+            <div *ngIf="tutorial.progress">
+              <div class="flex justify-between text-sm mb-1 items-end">
+                <span class="text-gray-600">Progress</span>
+                <span class="font-medium">
+                  {{ tutorial.progress.completionPercentage }}%
+                  <span class="text-gray-500 font-normal">({{ tutorial.progress.lessonsCompleted }}/{{ tutorial.progress.totalLessons }})</span>
+                </span>
+              </div>
+              <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div class="h-full rounded-full" 
+                     [style.width.%]="tutorial.progress.completionPercentage"
+                     [ngClass]="getProgressColor(tutorial.progress.completionPercentage)">
+                </div>
+              </div>
+            </div>
+            
+            <!-- Tutorial metadata -->
+            <div class="flex justify-between items-center text-sm mt-4 text-gray-500">
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                {{ tutorial.lessonCount || tutorial.progress?.totalLessons || 0 }} lessons
+              </div>
+              
+              <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {{ tutorial.estimatedTime || 'Self-paced' }}
+              </div>
+            </div>
+            
+            <!-- Action button -->
+            <div class="mt-5">
+              <button 
+                (click)="navigateToTutorial(tutorial._id)"
+                class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">
+                {{ tutorial.progress?.status === 'completed' ? 'Review Again' : 
+                   tutorial.progress?.status === 'in_progress' ? 'Continue Learning' : 'Start Learning' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

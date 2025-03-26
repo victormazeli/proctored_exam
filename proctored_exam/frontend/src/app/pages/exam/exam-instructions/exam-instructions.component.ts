@@ -1,9 +1,9 @@
-// exam-instructions.component.ts
 import { Component, OnInit } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Exam } from 'src/app/models/exam.interface';
 import { ExamService } from 'src/app/services/exam.service';
 import { NotificationService } from 'src/app/services/notification.service';
+import { ExistingAttempt } from '../resume-exam-dialog/resume-exam-dialog.component';
 
 
 @Component({
@@ -59,6 +59,9 @@ export class ExamInstructionsComponent implements OnInit {
   }
   examId: string = '';
 
+  showResumeDialog: boolean = false;
+  existingAttempt: ExistingAttempt | null = null;
+
   constructor(
     private router: Router,
     private route: ActivatedRoute,
@@ -83,12 +86,53 @@ export class ExamInstructionsComponent implements OnInit {
     })
   }
 
-  startExam(): void {
-    this.router.navigate(['/exams', this.examId, 'session']);
+
+
+  startExam() {
+    
+    this.examService.checkPreviousAttempt(this.examData._id).subscribe({
+      next: (response) => {
+        if (response.data.hasExistingAttempt) {
+          // Show the resume dialog
+          this.existingAttempt = response.data.existingAttempt;
+          this.showResumeDialog = true;
+        } else {
+          // No existing attempt, go directly to the exam
+          this.router.navigate(['/exams', this.examData._id, 'session']);
+        }
+      },
+      error: (error) => {
+        console.error('Error starting exam:', error);
+        // Show error message
+      }
+    });
+  }
+  
+  onResumeExam(attemptId: string) {
+    this.showResumeDialog = false;
+    this.router.navigate(['/exams', attemptId, 'session'], { 
+      queryParams: { resume: true }
+    });
+  }
+  
+  onStartNewExam() {
+    this.showResumeDialog = false;
+    this.router.navigate(['/exams', this.examData._id, 'session']);
+    
+  }
+
+  onViewResults(attemptId: string) {
+    this.showResumeDialog = false;
+    this.router.navigate(['/exams/results', attemptId]);
+  }
+  
+  onCancelDialog() {
+    this.showResumeDialog = false;
+    this.existingAttempt = null;
   }
 
   goBack(): void {
-    this.router.navigate(['/exams']);
+    this.router.navigate(['/exams/select']);
   }
 
   hasWebcamPermission = false;

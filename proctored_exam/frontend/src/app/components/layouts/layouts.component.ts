@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-admin-layout',
@@ -196,6 +197,11 @@ export class AdminLayoutComponent {
       label: 'Exams', 
       route: '/admin/exams' 
     },
+    {
+      icon: 'fas fa-book',
+      label: 'Tutorials',
+      route: '/admin/tutorials'
+    },
     { 
       icon: 'fas fa-question-circle', 
       label: 'Questions', 
@@ -225,14 +231,21 @@ export class AdminLayoutComponent {
   ];
   
   // User information - would typically come from an auth service
-  currentUser = {
+  currentUser: any = {
     name: 'Admin User',
     email: 'admin@example.com',
     avatar: '/assets/images/avatar.jpg'
   };
 
+  constructor(private authService: AuthService) {}
+
+  ngOnInit(): void {
+    this.currentUser = this.authService.currentUserValue
+  }
+
+
   logout() {
-    console.log("logout")
+    this.authService.logout(true);
   }
 }
 

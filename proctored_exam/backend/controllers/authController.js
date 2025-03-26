@@ -1,172 +1,100 @@
-// controllers/authController.js
 const User = require('../models/user');
-const Certification = require('../models/certification');
-const passport = require('passport');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { validationResult } = require('express-validator');
 const crypto = require('crypto');
 
 /**
- * Render login page
+ * Generate JWT token for a user
+ * @param {Object} user - User object
+ * @returns {String} JWT token
  */
-exports.getLogin = (req, res) => {
-  // If already logged in, redirect to home
-  if (req.isAuthenticated()) {
-    return res.redirect('/exams/select');
-  }
+const generateToken = (user) => {
+  const payload = {
+    id: user._id,
+    email: user.email,
+    role: user.role
+  };
   
-  res.render('auth/login', {
-    title: 'Login',
-    returnTo: req.query.returnTo || '',
-    path: req.path,
-    body: ''
-  });
+  return jwt.sign(
+    payload,
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRY || '7d' }
+  );
 };
 
 /**
- * Process login request
+ * User login
+ * @route POST /api/auth/login
  */
-exports.postLogin = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    req.flash('error_msg', errors.array()[0].msg);
-    return res.redirect('/auth/login');
-  }
-  
-  passport.authenticate('local', (err, user, info) => {
-    if (err) {
-      console.error('Login error:', err);
-      req.flash('error_msg', 'An error occurred during login');
-      return res.redirect('/auth/login');
-    }
-    
-    if (!user) {
-      req.flash('error_msg', info.message);
-      return res.redirect('/auth/login');
-    }
-    
-    req.logIn(user, (err) => {
-      if (err) {
-        console.error('Session error:', err);
-        req.flash('error_msg', 'Failed to establish session');
-        return res.redirect('/auth/login');
-      }
-      
-      // Update last login timestamp
-      User.findByIdAndUpdate(user._id, {
-        lastLogin: new Date()
-      }).catch(err => console.error('Failed to update last login:', err));
-      
-      // Redirect to original destination or default
-      const returnTo = req.body.returnTo || '/exams/select';
-      res.redirect(returnTo);
-    });
-  })(req, res, next);
-};
-
-/**
- * Render admin login page
- */
-exports.getAdminLogin = (req, res) => {
-  // If already logged in as admin, redirect to admin dashboard
-  if (req.isAuthenticated() && req.user.role === 'admin') {
-    return res.redirect('/admin/dashboard');
-  }
-  
-  // If logged in but not admin, redirect to regular dashboard
-  if (req.isAuthenticated()) {
-    req.flash('error_msg', 'You do not have admin privileges');
-    return res.redirect('/exams/select');
-  }
-  
-  res.render('auth/admin-login', {
-    title: 'Admin Login',
-    returnTo: req.query.returnTo || '/admin/dashboard'
-  });
-};
-
-/**
- * Process admin login request
- */
-exports.postAdminLogin = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    req.flash('error_msg', errors.array()[0].msg);
-    return res.redirect('/auth/admin/login');
-  }
-  
-  passport.authenticate('local', (err, user, info) => {
-    if (err) {
-      console.error('Admin login error:', err);
-      req.flash('error_msg', 'An error occurred during login');
-      return res.redirect('/auth/admin/login');
-    }
-    
-    if (!user) {
-      req.flash('error_msg', info.message);
-      return res.redirect('/auth/admin/login');
-    }
-    
-    // Check if user is an admin
-    if (user.role !== 'admin') {
-      req.flash('error_msg', 'You do not have admin privileges');
-      return res.redirect('/auth/admin/login');
-    }
-    
-    req.logIn(user, (err) => {
-      if (err) {
-        console.error('Admin session error:', err);
-        req.flash('error_msg', 'Failed to establish session');
-        return res.redirect('/auth/admin/login');
-      }
-      
-      // Update last login timestamp
-      User.findByIdAndUpdate(user._id, {
-        lastLogin: new Date()
-      }).catch(err => console.error('Failed to update last login:', err));
-      
-      // Log admin login
-      console.log(`Admin login: ${user.username} at ${new Date().toISOString()}`);
-      
-      // Redirect to admin dashboard
-      const returnTo = req.body.returnTo || '/admin/dashboard';
-      res.redirect(returnTo);
-    });
-  })(req, res, next);
-};
-
-/**
- * Render registration page
- */
-exports.getRegister = (req, res) => {
-  // If already logged in, redirect to home
-  if (req.isAuthenticated()) {
-    return res.redirect('/exams/select');
-  }
-  
-  res.render('auth/register', {
-    title: 'Register'
-  });
-};
-
-/**
- * Process registration request
- */
-exports.postRegister = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.render('auth/register', {
-      title: 'Register',
-      errors: errors.array(),
-      username: req.body.username,
-      email: req.body.email
-    });
-  }
-  
-  const { username, email, password, confirmPassword } = req.body;
-  
+exports.login = async (req, res) => {
   try {
+  
+    const { email, password } = req.body;
+    
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+    
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+    
+    // Update last login timestamp
+    user.lastLogin = new Date();
+    await user.save();
+    
+    // Generate JWT token
+    const token = generateToken(user);
+    
+    // Return user data and token
+    return res.json({
+      success: true,
+      token: `Bearer ${token}`,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        profile: user.profile,
+        settings: user.settings
+      }
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error during login'
+    });
+  }
+};
+
+/**
+ * Register new user
+ * @route POST /api/auth/register
+ */
+exports.register = async (req, res) => {
+  try {
+  
+    const { username, email, password, confirmPassword } = req.body;
+    
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passwords do not match'
+      });
+    }
+    
     // Check if user already exists
     const existingUser = await User.findOne({
       $or: [
@@ -176,11 +104,9 @@ exports.postRegister = async (req, res) => {
     });
     
     if (existingUser) {
-      return res.render('auth/register', {
-        title: 'Register',
-        error_msg: 'Passwords do not match',
-        username,
-        email
+      return res.status(400).json({
+        success: false,
+        message: 'Username or email already exists'
       });
     }
     
@@ -194,6 +120,7 @@ exports.postRegister = async (req, res) => {
       email: email.toLowerCase(),
       password: hashedPassword,
       role: 'user',
+      active: true,
       profile: {
         name: username
       },
@@ -212,228 +139,64 @@ exports.postRegister = async (req, res) => {
     
     await newUser.save();
     
-    req.flash('success_msg', 'Registration successful! You can now log in.');
-    res.redirect('/auth/login');
+    return res.status(201).json({
+      success: true,
+      message: 'Registration successful'
+    });
   } catch (err) {
     console.error('Registration error:', err);
-    res.render('auth/register', {
-      title: 'Register',
-      error_msg: 'An error occurred during registration',
-      username,
-      email
+    return res.status(500).json({
+      success: false,
+      message: 'Server error during registration'
     });
   }
 };
 
-
 /**
- * Log out user
- */
-exports.logout = (req, res) => {
-  req.logout(function(err) {
-    if (err) {
-      console.error('Logout error:', err);
-      return res.redirect('/');
-    }
-    req.flash('success_msg', 'You are now logged out');
-    res.redirect('/auth/login');
-  });
-};
-
-/**
- * Render forgot password page
- */
-exports.getForgotPassword = (req, res) => {
-  res.render('auth/forgot-password', {
-    title: 'Forgot Password'
-  });
-};
-
-/**
- * Process forgot password request
- */
-exports.postForgotPassword = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.render('auth/forgot-password', {
-      title: 'Forgot Password',
-      errors: errors.array(),
-      email: req.body.email
-    });
-  }
-  
-  try {
-    const { email } = req.body;
-    
-    // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase() });
-    
-    if (!user) {
-      // Don't reveal that email doesn't exist
-      req.flash('success_msg', 'If an account exists with that email, a password reset link has been sent.');
-      return res.redirect('/auth/login');
-    }
-    
-    // Generate reset token
-    const resetToken = crypto.randomBytes(20).toString('hex');
-    const resetTokenExpiry = Date.now() + 3600000; // 1 hour
-    
-    // Save reset token to user
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = resetTokenExpiry;
-    await user.save();
-    
-    // In a real application, send email with reset link
-    // For this implementation, just show the token
-    console.log(`Reset Token for ${email}: ${resetToken}`);
-    
-    req.flash('success_msg', 'If an account exists with that email, a password reset link has been sent.');
-    res.redirect('/auth/login');
-  } catch (err) {
-    console.error('Forgot password error:', err);
-    req.flash('error_msg', 'An error occurred. Please try again.');
-    res.redirect('/auth/forgot-password');
-  }
-};
-
-/**
- * Render reset password page
- */
-exports.getResetPassword = async (req, res) => {
-  try {
-    const { token } = req.params;
-    
-    // Find user with valid token
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
-    });
-    
-    if (!user) {
-      req.flash('error_msg', 'Password reset token is invalid or has expired');
-      return res.redirect('/auth/forgot-password');
-    }
-    
-    res.render('auth/reset-password', {
-      title: 'Reset Password',
-      token
-    });
-  } catch (err) {
-    console.error('Reset password page error:', err);
-    req.flash('error_msg', 'An error occurred. Please try again.');
-    res.redirect('/auth/forgot-password');
-  }
-};
-
-/**
- * Process reset password request
- */
-exports.postResetPassword = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.render('auth/reset-password', {
-      title: 'Reset Password',
-      errors: errors.array(),
-      token: req.params.token
-    });
-  }
-  
-  try {
-    const { token } = req.params;
-    const { password, confirmPassword } = req.body;
-    
-    // Find user with valid token
-    const user = await User.findOne({
-      resetPasswordToken: token,
-      resetPasswordExpires: { $gt: Date.now() }
-    });
-    
-    if (!user) {
-      req.flash('error_msg', 'Password reset token is invalid or has expired');
-      return res.redirect('/auth/forgot-password');
-    }
-    
-    if (password !== confirmPassword) {
-      return res.render('auth/reset-password', {
-        title: 'Reset Password',
-        error_msg: 'Passwords do not match',
-        token
-      });
-    }
-    
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    
-    // Update user password and clear reset token
-    user.password = hashedPassword;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
-    
-    req.flash('success_msg', 'Password has been reset successfully. You can now log in with your new password.');
-    res.redirect('/auth/login');
-  } catch (err) {
-    console.error('Reset password error:', err);
-    req.flash('error_msg', 'An error occurred. Please try again.');
-    res.redirect(`/auth/reset-password/${req.params.token}`);
-  }
-};
-
-/**
- * Render profile page
+ * Get current user profile
+ * @route GET /api/auth/profile
  */
 exports.getProfile = async (req, res) => {
   try {
-    // Get user with attempts count
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id).select('-password');
     
     if (!user) {
-      req.flash('error_msg', 'User not found');
-      return res.redirect('/');
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
     }
     
-    // Get certification progress
-    const certificationProgress = await Promise.all(
-      user.certificationProgress.map(async (progress) => {
-        const certification = await Certification.findById(progress.certificationId)
-          .select('name code');
-        
-        return {
-          ...progress.toObject(),
-          certification: certification || { name: 'Unknown Certification' }
-        };
-      })
-    );
-    
-    res.render('auth/profile', {
-      title: 'My Profile',
-      user,
-      certificationProgress
+    return res.json({
+      success: true,
+      user
     });
   } catch (err) {
-    console.error('Profile page error:', err);
-    req.flash('error_msg', 'Failed to load profile');
-    res.redirect('/');
+    console.error('Get profile error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
   }
 };
 
 /**
  * Update user profile
+ * @route PUT /api/auth/profile
  */
 exports.updateProfile = async (req, res) => {
   try {
-    // const errors = validationResult(req);
-    // if (!errors.isEmpty()) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     errors: errors.array()
-    //   });
-    // }
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
     
     const { name, email, currentPassword, newPassword } = req.body;
     
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
     
     // Check if email is changed and already exists
     if (email && email.toLowerCase() !== user.email) {
@@ -451,6 +214,7 @@ exports.updateProfile = async (req, res) => {
       
       user.email = email.toLowerCase();
     }
+    
     
     // Update profile name
     if (name) {
@@ -483,23 +247,24 @@ exports.updateProfile = async (req, res) => {
     console.error('Profile update error:', err);
     return res.status(500).json({
       success: false,
-      message: 'An error occurred while updating profile'
+      message: 'Server error while updating profile'
     });
   }
 };
 
 /**
  * Update user settings
+ * @route PUT /api/auth/settings
  */
 exports.updateSettings = async (req, res) => {
   try {
     const { proctorEnabled, webcamPreference, notificationsEnabled } = req.body;
     
-    await User.findByIdAndUpdate(req.user._id, {
+    await User.findByIdAndUpdate(req.user.id, {
       settings: {
-        proctorEnabled: proctorEnabled === 'true',
+        proctorEnabled: Boolean(proctorEnabled),
         webcamPreference,
-        notificationsEnabled: notificationsEnabled === 'true'
+        notificationsEnabled: Boolean(notificationsEnabled)
       }
     });
     
@@ -511,29 +276,146 @@ exports.updateSettings = async (req, res) => {
     console.error('Settings update error:', err);
     return res.status(500).json({
       success: false,
-      message: 'An error occurred while updating settings'
+      message: 'Server error while updating settings'
+    });
+  }
+};
+
+/**
+ * Request password reset
+ * @route POST /api/auth/forgot-password
+ */
+exports.forgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+    
+    const { email } = req.body;
+    
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
+    
+    // Don't reveal if user exists or not
+    if (!user) {
+      return res.json({
+        success: true,
+        message: 'If an account exists with that email, a password reset link will be sent'
+      });
+    }
+    
+    // Generate reset token
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+    
+    // Save reset token to user
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = resetTokenExpiry;
+    await user.save();
+    
+    // In a real app, send email with reset link
+    // For this implementation, return the token in the response
+    console.log(`Reset Token for ${email}: ${resetToken}`);
+    
+    return res.json({
+      success: true,
+      message: 'Password reset requested successfully',
+      resetToken // In production, remove this line and send via email
+    });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+/**
+ * Reset password with token
+ * @route POST /api/auth/reset-password/:token
+ */
+exports.resetPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        errors: errors.array()
+      });
+    }
+    
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+    
+    // Verify passwords match
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Passwords do not match'
+      });
+    }
+    
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+    
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password reset token is invalid or has expired'
+      });
+    }
+    
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+    
+    // Update user password and clear reset token
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+    
+    return res.json({
+      success: true,
+      message: 'Password has been reset successfully'
+    });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Server error'
     });
   }
 };
 
 /**
  * Generate API token for user
+ * @route POST /api/auth/token
  */
 exports.generateApiToken = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
     
-    // Generate JWT token
+    // Generate JWT token with longer expiry
     const payload = {
       id: user._id,
-      username: user.username,
-      role: user.role
+      email: user.email,
+      role: user.role,
+      tokenType: 'api'
     };
     
     const token = jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRY || '30d' }
+      { expiresIn: '30d' }
     );
     
     // Save token reference to user
@@ -560,15 +442,15 @@ exports.generateApiToken = async (req, res) => {
   }
 };
 
-
 /**
  * Revoke API token
+ * @route DELETE /api/auth/token/:tokenId
  */
 exports.revokeApiToken = async (req, res) => {
   try {
     const { tokenId } = req.params;
     
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.id);
     
     if (!user.apiTokens || user.apiTokens.length === 0) {
       return res.status(404).json({

@@ -1,0 +1,360 @@
+<!-- analytics.component.html -->
+<div class="admin-analytics">
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Exam Analytics</h1>
+        <div class="flex space-x-4">
+          <button (click)="refreshData()" class="btn btn-secondary flex items-center">
+            <i class="fas fa-sync-alt mr-2"></i> Refresh
+          </button>
+          <a routerLink="/admin/dashboard" class="btn btn-primary">
+            Back to Dashboard
+          </a>
+        </div>
+      </div>
+  
+      <!-- Analytics Filter Controls -->
+      <div class="bg-white rounded-lg shadow mb-8 p-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date Range</label>
+            <select 
+              [(ngModel)]="dateRange" 
+              (change)="loadAnalyticsData()"
+              class="form-select w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 3 months</option>
+              <option value="180">Last 6 months</option>
+              <option value="365">Last year</option>
+            </select>
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Group By</label>
+            <select 
+              [(ngModel)]="groupBy" 
+              (change)="loadAnalyticsData()"
+              class="form-select w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+            </select>
+          </div>
+          <div class="col-span-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Certification</label>
+            <select 
+              [(ngModel)]="selectedCertification" 
+              (change)="loadAnalyticsData()"
+              class="form-select w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50">
+              <option value="all">All Certifications</option>
+              <option *ngFor="let cert of certifications" [value]="cert._id">{{ cert.name }}</option>
+            </select>
+          </div>
+          <div class="col-span-1 flex items-end">
+            <button 
+              (click)="exportToCsv()" 
+              class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+              <i class="fas fa-file-export mr-2"></i> Export Data
+            </button>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Loading and Error States -->
+      <div *ngIf="isLoading" class="bg-blue-50 p-4 rounded-lg mb-8 flex items-center justify-center">
+        <i class="fas fa-circle-notch fa-spin text-blue-500 mr-2"></i>
+        <span class="text-blue-700">Loading analytics data...</span>
+      </div>
+  
+      <div *ngIf="hasError" class="bg-red-50 p-4 rounded-lg mb-8">
+        <div class="flex">
+          <i class="fas fa-exclamation-circle text-red-500 mr-2 mt-0.5"></i>
+          <div>
+            <p class="text-red-700">{{ errorMessage }}</p>
+            <button (click)="refreshData()" class="text-red-700 underline mt-2">Try again</button>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Overview Stats Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="bg-blue-100 text-blue-600 p-3 rounded-full">
+              <i class="fas fa-users"></i>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-sm font-medium text-gray-500">Total Attempts</h3>
+              <p class="text-2xl font-bold text-gray-800">{{ overviewStats.totalAttempts }}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="bg-green-100 text-green-600 p-3 rounded-full">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-sm font-medium text-gray-500">Pass Rate</h3>
+              <p class="text-2xl font-bold text-gray-800">{{ overviewStats.passRate.toFixed(1) }}%</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="bg-purple-100 text-purple-600 p-3 rounded-full">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-sm font-medium text-gray-500">Avg. Score</h3>
+              <p class="text-2xl font-bold text-gray-800">{{ overviewStats.averageScore.toFixed(1) }}%</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+          <div class="flex items-center">
+            <div class="bg-yellow-100 text-yellow-600 p-3 rounded-full">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="ml-4">
+              <h3 class="text-sm font-medium text-gray-500">Avg. Duration</h3>
+              <p class="text-2xl font-bold text-gray-800">{{ overviewStats.averageDurationMin }} min</p>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Attempt Trend Chart -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-lg shadow">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">Attempt Trends</h2>
+          </div>
+          <div class="p-6" style="height: 300px;">
+            <div *ngIf="!isLoading && timeTrendData && timeTrendData.length > 0; else noChartData">
+              <!-- Chart would normally go here - using placeholder for design -->
+              <div class="h-full w-full flex items-center justify-center text-gray-400">
+                <i class="fas fa-chart-line text-6xl"></i>
+              </div>
+            </div>
+            <ng-template #noChartData>
+              <div class="h-full flex items-center justify-center">
+                <p class="text-gray-500 text-sm">No trend data available for the selected period</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+        
+        <!-- Pass Rate Chart -->
+        <div class="bg-white rounded-lg shadow">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">Pass Rate by Certification</h2>
+          </div>
+          <div class="p-6" style="height: 300px;">
+            <div *ngIf="!isLoading && certPassRates && certPassRates.length > 0; else noPassRateData">
+              <!-- Chart would normally go here - using placeholder for design -->
+              <div class="h-full w-full flex items-center justify-center text-gray-400">
+                <i class="fas fa-chart-pie text-6xl"></i>
+              </div>
+            </div>
+            <ng-template #noPassRateData>
+              <div class="h-full flex items-center justify-center">
+                <p class="text-gray-500 text-sm">No pass rate data available</p>
+              </div>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Exam Performance Table -->
+      <div class="bg-white rounded-lg shadow mb-8">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 class="text-lg font-semibold text-gray-800">Exam Performance</h2>
+          <div class="relative">
+            <input 
+              type="text" 
+              [(ngModel)]="examSearch" 
+              (keyup)="filterExamPerformance()"
+              placeholder="Search exam..." 
+              class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Exam Name
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Attempts
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Pass Rate
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Avg. Score
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Avg. Duration
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <ng-container *ngIf="!isLoading && examPerformance && examPerformance.length > 0; else noExamData">
+                <tr *ngFor="let exam of filteredExamPerformance" class="hover:bg-gray-50">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{ exam.examName }}</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                    {{ exam.totalAttempts }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right">
+                    <div class="text-sm text-gray-900 font-medium" 
+                        [ngClass]="{
+                          'text-green-600': exam.passRate >= 70,
+                          'text-yellow-600': exam.passRate >= 50 && exam.passRate < 70,
+                          'text-red-600': exam.passRate < 50
+                        }">
+                      {{ exam.passRate.toFixed(1) }}%
+                    </div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 font-medium">
+                    {{ exam.avgScore.toFixed(1) }}%
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                    {{ exam.avgDurationMinutes.toFixed(0) }} min
+                  </td>
+                </tr>
+              </ng-container>
+              <ng-template #noExamData>
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">
+                    <div *ngIf="isLoading; else noResults">
+                      <i class="fas fa-circle-notch fa-spin text-blue-500 mr-2"></i> Loading exam data...
+                    </div>
+                    <ng-template #noResults>
+                      No exam performance data available
+                    </ng-template>
+                  </td>
+                </tr>
+              </ng-template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+  
+      <!-- Recent Attempts Table -->
+      <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+          <h2 class="text-lg font-semibold text-gray-800">Recent Attempts</h2>
+          <div class="relative">
+            <input 
+              type="text" 
+              [(ngModel)]="userSearch" 
+              (keyup)="filterRecentAttempts()"
+              placeholder="Search user or exam..." 
+              class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          </div>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Exam
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Date & Time
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Score
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Result
+                </th>
+                <th class="px-6 py-3 bg-gray-50 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <ng-container *ngIf="!isLoading && recentAttempts && recentAttempts.length > 0; else noAttemptsData">
+                <tr *ngFor="let attempt of filteredRecentAttempts" class="hover:bg-gray-50">
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">{{ attempt.userId.username }}</div>
+                    <div class="text-xs text-gray-500">{{ attempt.userId.email }}</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">{{ attempt.examId.name }}</div>
+                    <div class="text-xs text-gray-500">{{ attempt.certificationId.name }}</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm text-gray-900">{{ attempt.endTime | date:'MMM d, y' }}</div>
+                    <div class="text-xs text-gray-500">{{ attempt.endTime | date:'h:mm a' }}</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right">
+                    <div class="text-sm font-medium text-gray-900">{{ attempt.score.overall.toFixed(1) }}%</div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <span *ngIf="attempt.passed" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                      PASS
+                    </span>
+                    <span *ngIf="!attempt.passed" class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      FAIL
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-center">
+                    <a [routerLink]="['/admin/attempts', attempt._id]" class="text-blue-600 hover:text-blue-900 mr-3">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    <a [routerLink]="['/admin/attempts', attempt._id, 'review']" class="text-green-600 hover:text-green-900">
+                      <i class="fas fa-clipboard-check"></i>
+                    </a>
+                  </td>
+                </tr>
+              </ng-container>
+              <ng-template #noAttemptsData>
+                <tr>
+                  <td colspan="6" class="px-6 py-8 text-center text-sm text-gray-500">
+                    <div *ngIf="isLoading; else noAttemptsResults">
+                      <i class="fas fa-circle-notch fa-spin text-blue-500 mr-2"></i> Loading attempt data...
+                    </div>
+                    <ng-template #noAttemptsResults>
+                      No recent attempts found
+                    </ng-template>
+                  </td>
+                </tr>
+              </ng-template>
+            </tbody>
+          </table>
+        </div>
+        <div class="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
+          <div class="flex items-center space-x-2">
+            <button 
+              [disabled]="currentPage === 1"
+              (click)="changePage(currentPage - 1)"
+              class="px-3 py-1 rounded text-sm" 
+              [ngClass]="currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <span class="text-sm text-gray-600">Page {{ currentPage }} of {{ Math.ceil(totalAttempts / pageSize) || 1 }}</span>
+            <button 
+              [disabled]="currentPage >= Math.ceil(totalAttempts / pageSize)"
+              (click)="changePage(currentPage + 1)"
+              class="px-3 py-1 rounded text-sm"
+              [ngClass]="currentPage >= Math.ceil(totalAttempts / pageSize) ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+          <span class="text-sm text-gray-500">Showing {{ (recentAttempts || []).length }} of {{ totalAttempts }} attempts</span>
+        </div>
+      </div>
+    </div>
+  </div>

@@ -1,11 +1,15 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { Socket } from 'ngx-socket-io';
-// import { ExamService } from '../../../services/exam.service';
-// import { ProctorService } from '../../../services/proctor.service';
 import { Router, ActivatedRoute } from '@angular/router';
+import { Observable, Subscription } from 'rxjs';
+import { ConnectionStatusService } from 'src/app/components/shared/connection-status/connection-status.service';
+import { SaveStatusService } from 'src/app/components/shared/save-status/save-status.service';
 import { ExamData } from 'src/app/models/exam.interface';
-import { MockExamService } from 'src/app/services/mock-exam.service';
+import { ExamService } from 'src/app/services/exam.service';
 import { MockProctorService } from 'src/app/services/mock-proctor.service';
+import { NetworkStatusService } from 'src/app/services/network-status.service';
+import { NotificationService } from 'src/app/services/notification.service';
+import { ProctorService } from 'src/app/services/proctor.service';
 
 
 
@@ -63,6 +67,21 @@ export class ExamComponent implements OnInit, OnDestroy {
   private readonly MAX_RECONNECT_ATTEMPTS: number = 5;
   private currentQuestionStartTime: number = Date.now();
 
+  private autoSaveInterval: any = null;
+  private isDirty: boolean = false;
+  private lastSaveTime: number = 0;
+  private readonly SAVE_DEBOUNCE_MS: number = 5000; // 5 seconds debounce
+
+  private saveQueue: any[] = [];
+  isOnline: boolean = navigator.onLine;
+  private reconnectInterval: any = null;
+  private lastSaveAttempt: number = 0;
+
+
+  private networkStatusSubscription: Subscription | null = null;
+  private connectionStateSubscription: Subscription | null = null;
+
+
   filters = [
     { label: 'All', value: 'all' },
     { label: 'Answered', value: 'answered' },
@@ -74,8 +93,12 @@ export class ExamComponent implements OnInit, OnDestroy {
   private boundHandleBeforeUnload: (event: BeforeUnloadEvent) => void;
 
   constructor(
-    private examService: MockExamService,
-    private proctorService: MockProctorService,
+    private examService: ExamService,
+    private proctorService: ProctorService,
+    private notificationService: NotificationService,
+    private networkStatusService: NetworkStatusService,
+    private saveStatusService: SaveStatusService,
+    private connectionStatusService: ConnectionStatusService,
     private router: Router,
     private route: ActivatedRoute,
     private socket: Socket
@@ -86,14 +109,71 @@ export class ExamComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.route.params.subscribe(params => {
-      this.initializeExam(params['examId']);
+      this.route.queryParams.subscribe(queryParams => {
+        if (queryParams['resume'] && queryParams['resume'] == 'true') {
+          this.resumeExam(params['examId']);
+        }else {
+          this.initializeExam(params['examId']);
+        }
+      })
     });
+      
+    // Set up auto-save interval
+    this.setupAutoSave();
+
     window.addEventListener('beforeunload', this.boundHandleBeforeUnload);
+    // Set up network status listeners
+    this.subscribeToNetworkStatus();
   }
 
   ngOnDestroy() {
     this.cleanupExam();
     this.cleanupProctoring();
+
+     // Unsubscribe from services
+     if (this.networkStatusSubscription) {
+      this.networkStatusSubscription.unsubscribe();
+    }
+    if (this.connectionStateSubscription) {
+      this.connectionStateSubscription.unsubscribe();
+    }
+
+      // Try one last save if needed
+      if (this.isDirty && this.isOnline) {
+        this.saveProgress();
+      }
+  }
+
+  private subscribeToNetworkStatus() {
+    this.networkStatusSubscription = this.networkStatusService
+      .getNetworkStatus()
+      .subscribe(status => {
+        const wasOnline = this.isOnline;
+        this.isOnline = status.isOnline;
+        
+        // Handle online/offline transitions
+        if (this.isOnline && !wasOnline) {
+          // Just came back online
+          this.connectionStatusService.showSuccess(
+            'Your connection has been restored. Saving your progress...'
+          );
+          this.processSaveQueue();
+        } else if (!this.isOnline && wasOnline) {
+          // Just went offline
+          this.connectionStatusService.showOffline(
+            'You are offline. Your answers will be saved when connection is restored.'
+          );
+        }
+        
+        // Handle connection quality changes
+        if (this.isOnline && status.connectionQuality === 'poor') {
+          this.connectionStatusService.showWarning(
+            'Your internet connection is unstable. Your progress will continue to be saved.',
+            true,
+            10000
+          );
+        }
+      });
   }
 
   private initializeExam(examId: string) {
@@ -108,16 +188,35 @@ export class ExamComponent implements OnInit, OnDestroy {
           this.initializeProctoring();
         }
   
-        // Set up auto-save interval
-        setInterval(() => this.saveProgress(), 30000);
       },
       error: (error) => {
         console.error('Failed to initialize exam:', error);
-        // Handle error (show error message, redirect, etc.)
+        this.notificationService.showError('Failed to initialize exam');
+        this.router.navigate(['/exams/select']);
       }
     });
   }
   
+  private resumeExam(attemptId: string) {
+    this.examService.resumeExam(attemptId).subscribe({
+      next: (response) => {
+        this.examData = response.data;
+        this.timeRemaining = this.examData.timeLimit;
+        this.loadQuestion(0);
+        this.startTimer();
+  
+        if (this.examData.proctorEnabled) {
+          this.initializeProctoring();
+        }
+  
+      },
+      error: (error) => {
+        console.error('Failed to resume exam:', error);
+        this.notificationService.showError('Failed to resume exam');
+        this.router.navigate(['/exams/select']);
+      }
+    });
+  }
   private startTimer() {
     this.updateTimerDisplay();
     
@@ -169,19 +268,7 @@ export class ExamComponent implements OnInit, OnDestroy {
     }
   }
 
-  // loadQuestion(index: number) {
-  //   if (index < 0 || index >= this.examData.questions.length) {
-  //     console.error('Invalid question index:', index);
-  //     return;
-  //   }
-    
-  //   this.examData.currentQuestionIndex = index;
-  //   this.currentQuestion = this.examData.questions[index];
-    
-  //   // Start tracking time for this question
-  //   this.examData.timeSpent[index] = this.examData.timeSpent[index] || 0;
-  //   this.currentQuestionStartTime = Date.now();
-  // }
+
 
     // Add this computed property for filtered questions
     get filteredQuestions(): any[] {
@@ -348,6 +435,35 @@ export class ExamComponent implements OnInit, OnDestroy {
     this.saveCurrentQuestionTime();
   }
 
+  
+private setupAutoSave() {
+  // Start with 30-second intervals
+  this.autoSaveInterval = setInterval(() => {
+    if (this.isDirty) {
+      this.saveProgress();
+    }
+  }, 30000);
+  
+  // Listen for user interaction to mark as dirty
+  document.addEventListener('click', this.markAsDirty.bind(this));
+  document.addEventListener('keydown', this.markAsDirty.bind(this));
+}
+
+// Mark the exam state as dirty (needing to be saved)
+private markAsDirty() {
+  // Only mark as dirty if there are actual answers
+  if (Object.keys(this.examData.answers).length > 0) {
+    this.isDirty = true;
+    
+    // Implement debounced saving when user makes changes
+    const now = Date.now();
+    if (now - this.lastSaveAttempt > this.SAVE_DEBOUNCE_MS) {
+      this.saveProgress();
+      this.lastSaveAttempt = now;
+    }
+  }
+}
+
   private saveCurrentQuestionTime() {
     const timeSpent = Math.floor((Date.now() - this.currentQuestionStartTime) / 1000);
     this.examData.timeSpent[this.currentQuestionIndex] = 
@@ -355,16 +471,173 @@ export class ExamComponent implements OnInit, OnDestroy {
     this.currentQuestionStartTime = Date.now();
   }
 
+  private handleNetworkChange() {
+    this.isOnline = navigator.onLine;
+    
+    if (this.isOnline) {
+      // We're back online - try to process any queued saves
+      this.processSaveQueue();
+      
+      // Clear reconnect interval if it exists
+      if (this.reconnectInterval) {
+        clearInterval(this.reconnectInterval);
+        this.reconnectInterval = null;
+      }
+    } else {
+      // We're offline - set up a reconnect interval
+      if (!this.reconnectInterval) {
+        this.reconnectInterval = setInterval(() => {
+          if (navigator.onLine) {
+            this.handleNetworkChange();
+          }
+        }, 30000); // Check every 30 seconds
+      }
+      
+      // Show offline indicator to user
+      this.connectionStatusService.showOffline(
+        'You are offline. Your answers will be saved when connection is restored.'
+      );
+    }
+  }
+
   private async saveProgress() {
+    // Save current question state
     this.saveCurrentQuestionState();
+    
+    // Check if there are any answers to save
+    const hasAnswers = Object.keys(this.examData.answers).length > 0;
+    
+    // If nothing has been answered and we're just starting, don't save yet
+    if (!hasAnswers && Object.keys(this.examData.timeSpent).length === 0) {
+      console.log('No answers or changes to save yet');
+      return;
+    }
+    
+    // Prepare save data
+    const saveData = {
+      attemptId: this.examData.id,
+      timestamp: Date.now(),
+      data: {
+        answers: { ...this.examData.answers },
+        timeSpent: { ...this.examData.timeSpent },
+        flagged: [...this.examData.flagged],
+        currentQuestionIndex: this.currentQuestionIndex
+      }
+    };
+    
+    // If offline, queue the save
+    if (!this.isOnline) {
+      this.queueSave(saveData);
+      this.saveStatusService.showQueued('Changes will be saved when connection is restored');
+      return;
+    }
+  
+    this.saveStatusService.showSaving('Saving your progress...');
+    
     try {
-      await this.examService.saveProgress(this.examData.id, {
-        answers: this.examData.answers,
-        timeSpent: this.examData.timeSpent,
-        flagged: this.examData.flagged
-      }).toPromise();
+      // Try to save
+      const response = await this.examService.saveProgress(saveData.attemptId, saveData.data).toPromise();
+      this.isDirty = false;
+  
+      // Only show saved message if there were actual changes
+      if (response.message !== 'No changes to save') {
+        this.saveStatusService.showSaved('Progress saved');
+      } else {
+        // Just hide the saving indicator without showing "saved"
+        this.saveStatusService.hide();
+      }
     } catch (error) {
       console.error('Failed to save progress:', error);
+      // Check if it's a network error or a server error
+      if (!navigator.onLine) {
+        // We've gone offline during the save attempt
+        this.queueSave(saveData);
+        this.connectionStatusService.showOffline(
+          'You are offline. Your answers will be saved when connection is restored.'
+        );
+        this.saveStatusService.showQueued('Changes will be saved when connection is restored');
+      } else {
+        // Server error - queue for retry
+        this.queueSave(saveData);
+        this.saveStatusService.showError('Unable to save. Will retry automatically');
+        
+        // Retry after a delay
+        setTimeout(() => {
+          this.processSaveQueue();
+        }, 10000);
+      }
+    }
+  }
+  
+
+  private queueSave(saveData: any) {
+    // Add to queue
+    this.saveQueue.push(saveData);
+    
+    // Store in localStorage as backup
+    try {
+      localStorage.setItem(`exam_save_${this.examData.id}`, JSON.stringify({
+        queue: this.saveQueue,
+        lastAttempt: Date.now()
+      }));
+    } catch (e) {
+      console.error('Failed to save to localStorage:', e);
+    }
+  }
+  
+  private async processSaveQueue() {
+    if (this.saveQueue.length === 0) {
+      // Check localStorage for any saved queue from previous sessions
+      try {
+        const savedQueue = localStorage.getItem(`exam_save_${this.examData.id}`);
+        if (savedQueue) {
+          const queueData = JSON.parse(savedQueue);
+          this.saveQueue = queueData.queue;
+        }
+      } catch (e) {
+        console.error('Failed to retrieve from localStorage:', e);
+        return;
+      }
+      
+      if (this.saveQueue.length === 0) return;
+    }
+    
+    // Get the most recent save from the queue
+    const mostRecentSave = this.saveQueue.pop();
+    this.saveQueue = []; // Clear the queue
+    
+    // Show saving status
+    this.saveStatusService.showSaving('Saving your progress...');
+    
+    try {
+      await this.examService.saveProgress(
+        mostRecentSave.attemptId, 
+        mostRecentSave.data
+      ).toPromise();
+      
+      // Clear localStorage backup
+      localStorage.removeItem(`exam_save_${this.examData.id}`);
+      
+      // Reset dirty flag
+      this.isDirty = false;
+      
+      // Show success
+      this.saveStatusService.showSaved('All changes saved');
+      
+      // Update the connection status message if it's visible
+      this.connectionStatusService.showSuccess(
+        'Your connection has been restored. All changes saved.',
+        false,
+        3000
+      );
+    } catch (error) {
+      console.error('Failed to process save queue:', error);
+      
+      // Re-queue for next attempt
+      this.queueSave(mostRecentSave.data);
+      
+      // Show error
+      this.saveStatusService.showError('Unable to save progress. Will retry automatically.');
     }
   }
 
@@ -482,6 +755,14 @@ export class ExamComponent implements OnInit, OnDestroy {
     if (this.timerInterval) {
       clearInterval(this.timerInterval);
     }
+
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+    }
+    
+    document.removeEventListener('click', this.markAsDirty.bind(this));
+    document.removeEventListener('keydown', this.markAsDirty.bind(this));
+  
     window.removeEventListener('beforeunload', this.boundHandleBeforeUnload);
     if (this.socket) {
       this.socket.disconnect();
@@ -514,25 +795,31 @@ export class ExamComponent implements OnInit, OnDestroy {
         // Set up webcam stream
         if (this.proctorWebcam?.nativeElement) {
           this.proctorWebcam.nativeElement.srcObject = stream;
-        }
-  
-        // Initialize proctor service
-        this.proctorService.initialize(this.examData.id, this.examData.id);
-  
-        // Subscribe to proctor service events
-        this.setupProctorSubscriptions();
+          await this.proctorWebcam.nativeElement.play();
+          console.log('Webcam stream active, initializing proctor service');
 
-         // Set up visibility monitoring 
-         this.setupVisibilityMonitoring();
-  
-        // Update status
-        this.updateProctorStatus('active', 'Proctoring Active');
-  
-        // Log initialization
-        this.logProctorEvent('proctor_initialized', {
-          webcamActive: true,
-          timestamp: new Date().toISOString()
-        });
+          // Initialize proctor service
+          await this.proctorService.initialize(this.examData.id, this.proctorWebcam.nativeElement);
+    
+          // Subscribe to proctor service events
+          this.setupProctorSubscriptions();
+
+          // Set up visibility monitoring 
+          this.setupVisibilityMonitoring();
+    
+          // Update status
+          this.updateProctorStatus('active', 'Proctoring Active');
+    
+          // Log initialization
+          this.logProctorEvent('proctor_initialized', {
+            webcamActive: true,
+            timestamp: new Date().toISOString()
+          });
+        } else {
+          console.error('Webcam element not available');
+          this.updateProctorStatus('error', 'Webcam element not available');
+        }
+
   
       } catch (error) {
         console.error('Webcam access error:', error);
@@ -553,7 +840,7 @@ export class ExamComponent implements OnInit, OnDestroy {
       // Subscribe to proctor status updates
       this.proctorService.status$.subscribe(status => {
         this.proctorStatusText = status.message;
-        this.proctorStatusClass = `status-${status.status}`;
+        this.proctorStatusClass = `${status.status}`;
       });
   
       // Subscribe to proctor warnings
@@ -594,7 +881,7 @@ export class ExamComponent implements OnInit, OnDestroy {
      */
     private updateProctorStatus(status: 'active' | 'warning' | 'error', message: string): void {
       this.proctorStatusText = message;
-      this.proctorStatusClass = `status-${status}`;
+      this.proctorStatusClass = `${status}`;
     }
   
     /**
@@ -655,6 +942,12 @@ export class ExamComponent implements OnInit, OnDestroy {
       // Clean up proctor service
       this.proctorService.cleanup();
     }
+
+
+      
+  onDismissConnectionStatus() {
+    this.connectionStatusService.hide();
+  }
 
 
 }

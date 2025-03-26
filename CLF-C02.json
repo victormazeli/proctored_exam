@@ -1,0 +1,240 @@
+{
+    "metadata": {
+      "title": "AWS Cloud Practitioner Self-Study Guide (CLF-C02)",
+      "description": "Comprehensive guide updated with AWS exam standards, including security, compliance, storage, and cost management enhancements.",
+      "certificationId": "67d9ece984170a612e851740"
+    },
+    "lessons": [
+      {
+        "title": "Introduction to AWS Cloud and Global Infrastructure",
+        "content": "# Introduction to AWS Cloud\n\nAmazon Web Services (AWS) is the world's most comprehensive and widely adopted cloud platform, offering over 200 fully featured services from data centers globally. AWS provides scalable, reliable, and cost-effective cloud computing solutions.\n\n## Benefits of AWS Cloud\n- **Scalability**: Easily scale resources up or down to meet demand.\n- **Cost Efficiency**: Pay-as-you-go pricing ensures you only pay for what you use.\n- **Security**: AWS employs strong security mechanisms, including encryption and compliance certifications.\n- **Global Reach**: AWS offers data centers across multiple geographic regions to ensure low latency and disaster recovery.\n\n## AWS Global Infrastructure\nAWS operates in multiple **Regions**, which consist of **Availability Zones (AZs)**. Each AZ is an isolated data center to ensure high availability. Services such as **CloudFront** and **Route 53** help distribute content across AWS' global network.",
+        "practicalExercises": [
+          {
+            "title": "Explore AWS Free Tier",
+            "description": "Sign up for an AWS Free Tier account and explore AWS Management Console.",
+            "instructions": "1. Go to AWS Free Tier page\n2. Sign up and create an account\n3. Log in to AWS Management Console\n4. Navigate through different AWS services\n5. Explore AWS Global Infrastructure page",
+            "expectedOutput": "Successfully created AWS account and accessed AWS Management Console.",
+            "solution": "1. Visit [AWS Free Tier](https://aws.amazon.com/free/)\n2. Sign up using valid credentials\n3. Follow AWS setup instructions\n4. Explore AWS Console and different services",
+            "hints": [
+              { "text": "Use an email that hasn't been used for AWS before.", "order": 1 },
+              { "text": "Ensure you have a valid credit/debit card for account verification.", "order": 2 }
+            ],
+            "difficulty": "beginner",
+            "estimatedTime": 30
+          }
+        ]
+      },
+      {
+        "title": "AWS Shared Responsibility Model & Compliance",
+        "content": "# Shared Responsibility Model\n\nAWS operates under a **shared responsibility model**:\n- **AWS Responsibility**: Security *of* the cloud (hardware, global infrastructure, edge locations).\n- **Customer Responsibility**: Security *in* the cloud (data encryption, IAM policies, OS/firewall configurations).\n\n## AWS Compliance Programs\n- **GDPR**: Data protection regulation for EU citizens.\n- **HIPAA**: Compliance for healthcare data handling.\n- **AWS Artifact**: Central portal for compliance reports and agreements.\n\n## Multi-Factor Authentication (MFA)\n- Always enable MFA for root and IAM users to prevent unauthorized access.\n- Supported methods: Virtual devices (e.g., Google Authenticator), hardware tokens.",
+        "practicalExercises": [
+          {
+            "title": "Enable MFA for Root Account",
+            "description": "Secure the root account with MFA.",
+            "instructions": "1. Log in to AWS Console\n2. Navigate to IAM → Dashboard\n3. Click 'Activate MFA' on the root account\n4. Follow setup instructions for a virtual device",
+            "expectedOutput": "Root account protected with MFA.",
+            "solution": "1. Go to IAM → Security Credentials\n2. Enable MFA and complete setup",
+            "hints": [
+              { "text": "Use a backup device in case the primary MFA is lost.", "order": 1 }
+            ],
+            "difficulty": "beginner",
+            "estimatedTime": 15
+          }
+        ]
+      },
+      {
+        "title": "AWS Identity and Security - IAM, KMS, IAM Identity Center",
+        "content": "# AWS Identity and Security\n\n## AWS IAM Identity Center (formerly AWS SSO)\n- Centralized authentication for AWS accounts and third-party applications.\n- Integrates with Microsoft Active Directory and SAML 2.0 providers.\n\n## IAM Policies\n- Create custom policies using JSON for granular permissions (e.g., restricting S3 access by IP).\n\n## AWS KMS & Secrets Manager\n- Use KMS to encrypt RDS databases and S3 buckets.\n- Automatically rotate database credentials with Secrets Manager.",
+        "practicalExercises": [
+          {
+            "title": "Create a Custom IAM Policy",
+            "description": "Build a policy allowing EC2 read-only access.",
+            "instructions": "1. Navigate to IAM → Policies\n2. Click 'Create Policy'\n3. Use JSON editor to define EC2 read permissions\n4. Attach policy to a role/user",
+            "expectedOutput": "Custom IAM policy granting EC2:Describe* permissions.",
+            "solution": "1. Use JSON:\n{\n  \"Version\": \"2012-10-17\",\n  \"Statement\": [{\n    \"Effect\": \"Allow\",\n    \"Action\": \"ec2:Describe*\",\n    \"Resource\": \"*\"\n  }]\n}",
+            "hints": [
+              { "text": "Test the policy with AWS CLI using `aws ec2 describe-instances`.", "order": 1 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 25
+          },
+          {
+            "title": "Create an IAM Role with S3 Access",
+            "description": "Create an IAM role and attach an S3 read-only policy.",
+            "instructions": "1. Navigate to IAM Console\n2. Create a new IAM role\n3. Attach the AmazonS3ReadOnlyAccess policy\n4. Assign the role to an EC2 instance",
+            "expectedOutput": "An IAM role with S3 read-only permissions assigned to an EC2 instance.",
+            "solution": "1. Open IAM Console and go to Roles\n2. Click 'Create role' and select EC2\n3. Attach AmazonS3ReadOnlyAccess\n4. Assign role to EC2 instance",
+            "hints": [
+              { "text": "Ensure the EC2 instance uses the correct role.", "order": 1 },
+              { "text": "Use AWS CLI to verify access permissions.", "order": 2 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 30
+          }
+        ]
+      },
+      {
+        "title": "AWS Storage Services - S3, EBS, Glacier",
+        "content": "# Amazon S3 (Simple Storage Service)\n- **Storage Classes**: Standard, Intelligent-Tiering, Glacier (archival).\n- **Bucket Policies**: JSON-based rules for cross-account access or IP restrictions.\n- **Lifecycle Management**: Automatically transition objects to cheaper tiers.\n\n## Amazon EBS & Glacier\n- **EBS**: Block storage for EC2 instances (e.g., databases).\n- **Glacier**: Low-cost archival storage for compliance backups.",
+        "practicalExercises": [
+          {
+            "title": "Create an S3 Bucket with Lifecycle Policy",
+            "description": "Configure a bucket to transition files to Glacier after 30 days.",
+            "instructions": "1. Navigate to S3 Console\n2. Create bucket\n3. Go to 'Management' → 'Lifecycle Rules'\n4. Add rule to transition objects to Glacier\n5. Set 30-day expiration",
+            "expectedOutput": "S3 bucket with lifecycle policy.",
+            "solution": "1. Create bucket → Enable lifecycle rule → Set Glacier transition.",
+            "hints": [
+              { "text": "Test with a sample file to ensure the transition works.", "order": 1 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 30
+          }
+        ]
+      },
+      {
+        "title": "AWS Compute Services - EC2, Lambda, and ECS",
+        "content": "# AWS Compute Services\n\nAWS provides multiple compute services to run applications efficiently.\n\n## Amazon EC2 (Elastic Compute Cloud)\n- Provides resizable virtual machines in the cloud.\n- Instances can be launched on demand, stopped, or terminated.\n- Allows users to choose instance types based on compute, memory, and storage needs.\n- **Pricing Options**: On-Demand, Reserved Instances, Spot Instances, and Savings Plans.\n\n## AWS Lambda\n- A serverless compute service that runs code without provisioning or managing servers.\n- Supports various languages such as Python, Node.js, and Java.\n- Automatically scales based on request volume.\n\n## Amazon ECS (Elastic Container Service)\n- A fully managed container orchestration service for running Docker containers.\n- Supports two launch types: Fargate (serverless) and EC2-backed clusters.",
+        "practicalExercises": [
+          {
+            "title": "Launch an EC2 Instance",
+            "description": "Deploy a virtual machine on AWS EC2.",
+            "instructions": "1. Log in to AWS Management Console\n2. Navigate to EC2 Dashboard\n3. Click 'Launch Instance'\n4. Select an Amazon Linux AMI\n5. Choose an instance type (t2.micro for Free Tier)\n6. Configure network settings\n7. Launch and connect via SSH",
+            "expectedOutput": "An active EC2 instance running Amazon Linux.",
+            "solution": "1. Log in to AWS Console and go to EC2\n2. Click 'Launch Instance'\n3. Select 'Amazon Linux 2' AMI\n4. Choose 't2.micro' as instance type\n5. Configure settings and launch\n6. Use SSH to connect",
+            "hints": [
+              { "text": "Ensure you create and download a key pair for SSH access.", "order": 1 },
+              { "text": "Security groups should allow inbound SSH access from your IP.", "order": 2 }
+            ],
+            "difficulty": "beginner",
+            "estimatedTime": 45
+          }
+        ]
+      },
+      {
+        "title": "AWS Networking - VPC, Route 53, CloudFront, and Direct Connect",
+        "content": "# AWS Networking Services\n\nNetworking is a fundamental aspect of cloud computing. AWS provides networking services to help customers build secure and highly available applications.\n\n## Amazon VPC (Virtual Private Cloud)\n- A logically isolated network within AWS.\n- Enables users to define subnets, route tables, and security groups.\n- Allows private and public subnet configurations.\n\n## Amazon Route 53\n- A scalable Domain Name System (DNS) web service.\n- Enables domain registration, DNS routing, and health checking.\n\n## AWS CloudFront\n- A content delivery network (CDN) that accelerates content delivery.\n- Uses edge locations to cache and serve content closer to users.\n\n## AWS Direct Connect\n- Provides a dedicated network connection between on-premises data centers and AWS.\n- Reduces latency and improves bandwidth efficiency.",
+        "practicalExercises": [
+          {
+            "title": "Create a VPC with Public and Private Subnets",
+            "description": "Set up a VPC with a public and private subnet.",
+            "instructions": "1. Navigate to AWS VPC Dashboard\n2. Click 'Create VPC' and define CIDR block\n3. Create a public and private subnet\n4. Attach an internet gateway to the public subnet\n5. Set up a route table",
+            "expectedOutput": "A VPC with a public and private subnet configured.",
+            "solution": "1. Open AWS Console and go to VPC Dashboard\n2. Click 'Create VPC' and define settings\n3. Add subnets, route tables, and an internet gateway",
+            "hints": [
+              { "text": "Ensure correct CIDR block settings to avoid conflicts.", "order": 1 },
+              { "text": "Use NAT Gateway for private subnet internet access.", "order": 2 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 60
+          }
+        ]
+      },
+      {
+        "title": "AWS Databases - RDS, DynamoDB, Redshift, and Aurora",
+        "content": "# AWS Database Services\n\nAWS provides a variety of managed database services to store and manage structured and unstructured data.\n\n## Amazon RDS (Relational Database Service)\n- A managed relational database service supporting MySQL, PostgreSQL, MariaDB, Oracle, and SQL Server.\n- Automated backups, monitoring, and scaling.\n- Supports Multi-AZ deployments for high availability.\n\n## Amazon DynamoDB\n- A fully managed NoSQL database service for key-value and document-based storage.\n- Provides single-digit millisecond performance.\n- Automatically scales and replicates data across multiple regions.\n\n## Amazon Redshift\n- A fully managed data warehouse service for large-scale analytics.\n- Uses columnar storage to optimize query performance.\n- Supports integration with business intelligence tools.\n\n## Amazon Aurora\n- A high-performance, MySQL- and PostgreSQL-compatible relational database.\n- Provides up to five times better performance than standard MySQL databases.\n- Supports serverless scaling with Aurora Serverless.",
+        "practicalExercises": [
+          {
+            "title": "Create an RDS Database",
+            "description": "Set up an Amazon RDS MySQL instance.",
+            "instructions": "1. Navigate to AWS RDS Console\n2. Click 'Create database' and select MySQL\n3. Choose Free Tier and configure instance settings\n4. Launch the database and connect using a MySQL client",
+            "expectedOutput": "A running MySQL database instance in Amazon RDS.",
+            "solution": "1. Open AWS Console and go to RDS Dashboard\n2. Click 'Create database' and select MySQL\n3. Configure Free Tier settings and launch instance\n4. Use a MySQL client to connect",
+            "hints": [
+              { "text": "Ensure your security group allows inbound MySQL connections.", "order": 1 },
+              { "text": "Use the RDS endpoint to connect from your MySQL client.", "order": 2 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 45
+          }
+        ]
+      },
+      {
+        "title": "AWS Monitoring and Logging - CloudWatch, CloudTrail, and X-Ray",
+        "content": "# AWS Monitoring and Logging\n\nMonitoring AWS resources is crucial for performance optimization and security.\n\n## Amazon CloudWatch\n- Monitors AWS resources and applications in real-time.\n- Collects metrics and logs for analysis.\n- Supports alarms and notifications via SNS.\n\n## AWS CloudTrail\n- Tracks user activity and API calls within AWS accounts.\n- Logs events for security auditing and compliance.\n- Can be integrated with AWS Organizations for centralized logging.\n\n## AWS X-Ray\n- Provides insights into application performance and distributed tracing.\n- Helps debug complex microservices architectures.\n- Visualizes request paths and dependencies.",
+        "practicalExercises": [
+          {
+            "title": "Set Up a CloudWatch Alarm",
+            "description": "Create an alarm to monitor EC2 instance CPU utilization.",
+            "instructions": "1. Navigate to AWS CloudWatch Console\n2. Click 'Create Alarm'\n3. Select EC2 instance and set CPU utilization threshold\n4. Configure SNS notification for alerts",
+            "expectedOutput": "A CloudWatch alarm that notifies when CPU usage exceeds a threshold.",
+            "solution": "1. Open AWS CloudWatch Dashboard\n2. Click 'Create Alarm' and select EC2 metric\n3. Set threshold and configure SNS notification\n4. Save and test alarm",
+            "hints": [
+              { "text": "Ensure you have an SNS topic created to receive notifications.", "order": 1 },
+              { "text": "Set a reasonable CPU utilization threshold (e.g., 80%).", "order": 2 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 30
+          }
+        ]
+      },
+      {
+        "title": "AWS Cost Management - Pricing, Billing, Support Plans",
+        "content": "# AWS Cost Management\n\nManaging costs efficiently in AWS helps organizations optimize spending.\n\n## AWS Pricing Models\n- **On-Demand Pricing**: Pay per hour or second with no upfront commitment.\n- **Reserved Instances**: Commit to a fixed term (1 or 3 years) for lower rates.\n- **Savings Plans**: Offer flexible pricing based on usage patterns.\n- **Spot Instances**: Provide deep discounts for unused AWS capacity.\n\n## AWS Support Plans\n- **Basic**: Free, limited to account/ billing support.\n- **Developer**: Business-hour email access.\n- **Business/Enterprise**: 24/7 support with SLAs.\n\n## AWS Trusted Advisor\n- Analyzes accounts for cost, security, and performance gaps.\n- Recommendations include idle ELBs, public S3 buckets, and underutilized instances.",
+        "practicalExercises": [
+          {
+            "title": "Analyze Costs with AWS Cost Explorer",
+            "description": "Use AWS Cost Explorer to review billing data and forecast future costs.",
+            "instructions": "1. Navigate to AWS Cost Management Console\n2. Click 'Cost Explorer' and select a time range\n3. Analyze service usage and spending trends\n4. Generate a forecast for the next month",
+            "expectedOutput": "A cost analysis report with spending trends and a forecast.",
+            "solution": "1. Open AWS Cost Management Console\n2. Click 'Cost Explorer' and set filters\n3. Review spending data and trends\n4. Export the report",
+            "hints": [
+              { "text": "Filter by specific services to see which incur the most cost.", "order": 1 },
+              { "text": "Use Reserved Instances and Savings Plans for long-term cost reductions.", "order": 2 }
+            ],
+            "difficulty": "beginner",
+            "estimatedTime": 30
+          },
+          {
+            "title": "Run Trusted Advisor Checks",
+            "description": "Identify cost-saving opportunities.",
+            "instructions": "1. Navigate to Trusted Advisor Dashboard\n2. Review 'Cost Optimization' checks\n3. Implement recommendations (e.g., delete idle load balancers)",
+            "expectedOutput": "Report of cost-saving actions.",
+            "solution": "1. Use Trusted Advisor → Enable Business/Enterprise support for full access.",
+            "hints": [
+              { "text": "Upgrade support plan if checks are locked.", "order": 1 }
+            ],
+            "difficulty": "beginner",
+            "estimatedTime": 20
+          }
+        ]
+      },
+      {
+        "title": "AWS Migration and Hybrid Cloud Solutions",
+        "content": "# AWS Migration & Hybrid Cloud\n\nAWS provides tools to migrate workloads from on-premises to the cloud.\n\n## AWS Migration Hub\n- Centralized service for tracking migration progress.\n\n## AWS Snow Family\n- **Snowcone**: Portable edge computing device for small datasets.\n- **Snowball**: Transfers large datasets to AWS offline.\n- **Snowmobile**: A truck-sized data migration service for exabyte-scale migrations.\n\n## AWS Outposts\n- Brings AWS infrastructure to on-premises data centers.\n- Supports hybrid cloud environments.\n\n## AWS Local Zones\n- Extends AWS services to locations closer to end users.",
+        "practicalExercises": [
+          {
+            "title": "Use AWS Migration Hub to Track a Migration",
+            "description": "Track an ongoing migration using AWS Migration Hub.",
+            "instructions": "1. Navigate to AWS Migration Hub\n2. Register a migration task\n3. Monitor the migration status",
+            "expectedOutput": "A migration task with progress tracking in AWS Migration Hub.",
+            "solution": "1. Open AWS Migration Hub\n2. Register a new migration task\n3. Monitor migration status",
+            "hints": [
+              { "text": "Ensure the migration tool is linked to Migration Hub.", "order": 1 },
+              { "text": "Use AWS DMS for database migrations.", "order": 2 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 45
+          }
+        ]
+      },
+      {
+        "title": "AWS Well-Architected Framework",
+        "content": "# AWS Well-Architected Framework\n\nAWS provides best practices for building secure and efficient cloud applications.\n\n## Six Pillars of AWS Well-Architected Framework\n- **Operational Excellence**: Automate processes and continuously improve.\n- **Security**: Implement strong identity and access management.\n- **Reliability**: Build resilient architectures that recover from failures.\n- **Performance Efficiency**: Optimize resources to meet demand.\n- **Cost Optimization**: Minimize costs without sacrificing performance.\n- **Sustainability**: Reduce environmental impact.",
+        "practicalExercises": [
+          {
+            "title": "Analyze a System Using AWS Well-Architected Tool",
+            "description": "Use AWS Well-Architected Tool to review an application architecture.",
+            "instructions": "1. Navigate to AWS Well-Architected Tool\n2. Create a new review\n3. Answer the review questions\n4. Generate recommendations",
+            "expectedOutput": "A report with best practice recommendations for improving architecture.",
+            "solution": "1. Open AWS Well-Architected Tool\n2. Start a new workload review\n3. Complete the assessment\n4. Review recommendations",
+            "hints": [
+              { "text": "Focus on security and cost optimization.", "order": 1 },
+              { "text": "Implement recommendations gradually.", "order": 2 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 40
+          }
+        ]
+      }
+    ]
+  }

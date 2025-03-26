@@ -3,8 +3,8 @@ import { Component, OnInit, TemplateRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { NgIfContext } from '@angular/common';
-import { NotificationService } from 'src/app/services/notification.service';
 import { Certification } from 'src/app/models/certification.interface';
+import { NotificationService } from 'src/app/services/notification.service';
 
 
 interface Question {

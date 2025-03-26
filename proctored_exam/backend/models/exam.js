@@ -27,7 +27,7 @@ const ExamSchema = new mongoose.Schema({
   },
   randomize: {
     type: Boolean,
-    default: false
+    default: true
   },
   showResults: {
     type: Boolean,

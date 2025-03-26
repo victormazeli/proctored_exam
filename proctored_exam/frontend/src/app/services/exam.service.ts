@@ -2,8 +2,8 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, BehaviorSubject, of } from 'rxjs';
+import { catchError, map, retry } from 'rxjs/operators';
 import { 
   ExamData, 
   ExamSubmission, 
@@ -11,6 +11,7 @@ import {
   ProctorConfig,
   ProctorEvent 
 } from '../models/exam.interface';
+import { NotificationService } from './notification.service';
 import { environment } from 'src/environment/environment';
 
 @Injectable({
@@ -21,16 +22,25 @@ export class ExamService {
   private examDataSubject = new BehaviorSubject<ExamData | null>(null);
   public examData$ = this.examDataSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private notificationService: NotificationService) {}
 
   /**
    * Initialize exam data
    */
-  initializeExam(examId: string): Observable<ExamData> {
-    return this.http.get<ExamData>(`${this.API_URL}/${examId}/initialize`).pipe(
+  initializeExam(examId: string, forceNew: boolean = false): Observable<any> {
+    const params: any = forceNew ? { forceNew: 'true', adaptive: 'true' } : {};
+    let httpParams = new HttpParams();
+      Object.keys(params).forEach(key => {
+        if (params[key]) {
+          httpParams = httpParams.append(key, params[key]);
+        }
+      });
+  
+    return this.http.get<any>(`${this.API_URL}/${examId}/start`, { params: httpParams }).pipe(
       map(data => {
-        this.examDataSubject.next(data);
-        return data;
+        console.log(data)
+        this.examDataSubject.next(data.data);
+        return data.data;
       })
     );
   }
@@ -38,15 +48,48 @@ export class ExamService {
   /**
    * Save exam progress
    */
-  saveProgress(attemptId: string, data: Partial<ExamData>): Observable<void> {
-    return this.http.post<void>(`${this.API_URL}/${attemptId}/progress`, data);
+  saveProgress(attemptId: string, data: any): Observable<any> {
+    return this.http.post<void>(`${this.API_URL}/attempts/${attemptId}/progress`, data).pipe(
+      retry(1),
+      catchError(this.handleError("saveProgress", {}))
+    )
   }
+
+    /**
+   * Check Exam Attempt
+   */
+    checkPreviousAttempt(examId: string): Observable<any> {
+      return this.http.get<void>(`${this.API_URL}/attempts/check/${examId}`).pipe(
+        catchError(this.handleError("CheckPreviousAttempt", {}))
+      )
+    }
 
   /**
    * Submit exam
    */
-  submitExam(submission: ExamSubmission): Observable<ExamResult> {
-    return this.http.post<ExamResult>(`${this.API_URL}/submit`, submission);
+  submitExam(submission: ExamSubmission): Observable<any> {
+    return this.http.post<ExamResult>(`${this.API_URL}/submit`, submission).pipe(
+      catchError(this.handleError("submitExam", {}))
+    )
+  }
+
+    /**
+   * Submit exam
+   */
+    resumeExam(attemptId: any): Observable<any> {
+      return this.http.get<any>(`${this.API_URL}/attempts/${attemptId}/resume`).pipe(
+        catchError(this.handleError("resumeExam", {}))
+      )
+    }
+  
+     /**
+   * Get exam results by attempt ID
+   */
+  getExamResults(attemptId: string): Observable<any> {
+    return this.http.get(`${this.API_URL}/attempts/${attemptId}/results`)
+      .pipe(
+        catchError(this.handleError("getExamResults", {}))
+      );
   }
 
   /**
@@ -118,6 +161,15 @@ export class ExamService {
 
 
   getExamById(id: any): Observable<any> {
-    return this.http.get<any>(`${this.API_URL}`, { params: {examId: id} })
+    return this.http.get<any>(`${this.API_URL}`, { params: {examId: id} });
   }
+
+    private handleError<T>(operation = 'operation', result?: T) {
+      return (error: any): Observable<T> => {
+        console.error(`${operation} failed: ${error.message}`);
+        // Let the app keep running by returning an empty result
+        this.notificationService.showError(error.error.message)
+        return of(result as T);
+      };
+    }
 }

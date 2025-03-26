@@ -4,7 +4,7 @@ const Question = require('../models/question');
 const Exam = require('../models/exam');
 const Certification = require('../models/certification');
 const Attempt = require('../models/attempt');
-// const analyticsService = require('../services/analyticsService');
+const analyticsService = require('../services/analyticService');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
@@ -13,7 +13,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 /**
- * Render admin dashboard
+ * Get admin dashboard data
  */
 exports.getDashboard = async (req, res) => {
   try {
@@ -39,19 +39,129 @@ exports.getDashboard = async (req, res) => {
       .populate('certificationId', 'name');
     
     // Get certification pass rates
-    // const certPassRates = await analyticsService.getCertificationPassRates();
-    const certPassRates = null;
+    const certPassRates = await analyticsService.getCertificationPassRates();
     
-    res.render('admin/dashboard', {
-      title: 'Admin Dashboard',
+    // Get total attempts count for pagination
+    const totalAttemptsCount = await Attempt.countDocuments({ completed: true });
+    
+    res.status(200).json({
       stats,
       recentAttempts,
-      certPassRates
+      certPassRates,
+      totalAttemptsCount
     });
   } catch (err) {
     console.error('Error loading admin dashboard:', err);
-    req.flash('error_msg', 'Failed to load dashboard data');
-    res.status(500).render('errors/500');
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to load dashboard data',
+      error: err.message
+    });
+  }
+};
+
+/**
+ * Get filtered attempts with pagination
+ */
+exports.getFilteredAttempts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const search = req.query.search || '';
+    const certificationId = req.query.certificationId || null;
+    
+    // Build query
+    const query = { completed: true };
+    
+    // Apply certification filter if specified
+    if (certificationId && certificationId !== 'all') {
+      query.certificationId = certificationId;
+    }
+    
+    // Apply search filter if provided
+    if (search) {
+      // Get user IDs that match the search
+      const users = await User.find({
+        $or: [
+          { username: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } }
+        ]
+      }).select('_id');
+      
+      const userIds = users.map(u => u._id);
+      
+      // Get exam IDs that match the search
+      const exams = await Exam.find({
+        name: { $regex: search, $options: 'i' }
+      }).select('_id');
+      
+      const examIds = exams.map(e => e._id);
+      
+      // Get certification IDs that match the search
+      const certifications = await Certification.find({
+        name: { $regex: search, $options: 'i' }
+      }).select('_id');
+      
+      const certIds = certifications.map(c => c._id);
+      
+      // Apply combined search
+      query.$or = [
+        { userId: { $in: userIds } },
+        { examId: { $in: examIds } },
+        { certificationId: { $in: certIds } }
+      ];
+    }
+    
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+    
+    // Get attempts with pagination
+    const attempts = await Attempt.find(query)
+      .sort({ endTime: -1 })
+      .skip(skip)
+      .limit(limit)
+      .populate('userId', 'username email')
+      .populate('examId', 'name')
+      .populate('certificationId', 'name');
+    
+    // Get total count for pagination
+    const total = await Attempt.countDocuments(query);
+    
+    return res.status(200).json({
+      attempts,
+      total,
+      page,
+      pages: Math.ceil(total / limit)
+    });
+  } catch (err) {
+    console.error('Error getting filtered attempts:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to get attempts data',
+      error: err.message
+    });
+  }
+};
+
+/**
+ * Get active exams count
+ */
+exports.getActiveExamCount = async (req, res) => {
+  try {
+    const count = await Attempt.countDocuments({ 
+      completed: false,
+      inProgress: true,
+      startTime: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+    });
+    
+    res.status(200).json({ count });
+  } catch (err) {
+    console.error('Error getting active exam count:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to get active exam count',
+      error: err.message
+    });
   }
 };
 
@@ -315,18 +425,23 @@ exports.getExam = async (req, res) => {
       .populate('createdBy', 'username');
       
     if (!exam) {
-      req.flash('error_msg', 'Exam not found');
-      return res.redirect('/admin/exams');
+      return res.status(404).json({
+        success: true,
+        message: 'Exam not found',
+        data: null,
+      });
     }
     
-    res.render('admin/exam', {
-      title: exam.name,
-      exam
+    return res.status(200).json({
+      success: true,
+      message: 'Exam fetched Successfully',
+      data: exam
     });
   } catch (err) {
-    console.error('Error loading exam:', err);
-    req.flash('error_msg', 'Failed to load exam');
-    res.redirect('/admin/exams');
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to load exam'
+    });
   }
 };
 

@@ -9,6 +9,7 @@ export enum NotificationType {
   ERROR = 'error',
   WARNING = 'warning',
   INFO = 'info'
+
 }
 
 /**
@@ -53,6 +54,7 @@ export class NotificationService {
       timeout
     });
   }
+
 
   /**
    * Show an error notification

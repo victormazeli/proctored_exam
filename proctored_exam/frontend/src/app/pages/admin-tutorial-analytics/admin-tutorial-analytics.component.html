@@ -1,0 +1,337 @@
+<!-- admin-tutorial-analytics.component.html -->
+<div class="admin-tutorial-analytics">
+    <div class="container mx-auto px-4 py-8">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+        <div>
+          <div class="flex items-center mb-2">
+            <a routerLink="/admin/tutorials" class="text-blue-600 hover:text-blue-800">
+              <i class="fas fa-arrow-left mr-2"></i>Back to Tutorials
+            </a>
+          </div>
+          <h1 class="text-2xl font-bold text-gray-800">{{ tutorial?.title }} - Analytics</h1>
+          <div class="text-sm text-gray-600 mt-1">{{ tutorial?.certification?.name }}</div>
+        </div>
+        <div class="mt-4 md:mt-0 flex space-x-4">
+          <div class="relative">
+            <select [(ngModel)]="dateRange" (change)="refreshData()" class="form-select">
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="365">Last year</option>
+              <option value="0">All time</option>
+            </select>
+          </div>
+          <button (click)="refreshData()" class="btn btn-secondary flex items-center">
+            <i class="fas fa-sync-alt mr-2"></i> Refresh
+          </button>
+        </div>
+      </div>
+  
+      <!-- Loading state -->
+      <div *ngIf="isLoading" class="bg-blue-50 p-4 rounded-lg mb-8 flex items-center justify-center">
+        <i class="fas fa-circle-notch fa-spin text-blue-500 mr-2"></i>
+        <span class="text-blue-700">Loading analytics data...</span>
+      </div>
+  
+      <!-- Error state -->
+      <div *ngIf="hasError" class="bg-red-50 p-4 rounded-lg mb-8">
+        <div class="flex">
+          <i class="fas fa-exclamation-circle text-red-500 mr-2 mt-0.5"></i>
+          <div>
+            <p class="text-red-700">{{ errorMessage }}</p>
+            <button (click)="refreshData()" class="text-red-700 underline mt-2">Try again</button>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Overview Stats -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="card bg-white">
+          <div class="card-body">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Total Users</h3>
+            <div class="flex items-center">
+              <div class="bg-blue-100 p-3 rounded-full mr-4">
+                <i class="fas fa-users text-blue-500"></i>
+              </div>
+              <div>
+                <p class="text-3xl font-bold text-gray-800">{{ overallStats?.totalUsers || 0 }}</p>
+                <p class="text-sm text-gray-500">started this tutorial</p>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <div class="card bg-white">
+          <div class="card-body">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Completion Rate</h3>
+            <div class="flex items-center">
+              <div class="bg-green-100 p-3 rounded-full mr-4">
+                <i class="fas fa-check-circle text-green-500"></i>
+              </div>
+              <div>
+                <p class="text-3xl font-bold text-gray-800">{{ (overallStats?.completionRate || 0).toFixed(1) }}%</p>
+                <p class="text-sm text-gray-500">
+                  {{ overallStats?.usersCompletedAll || 0 }} users completed all lessons
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <div class="card bg-white">
+          <div class="card-body">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Average Completion</h3>
+            <div class="flex items-center">
+              <div class="bg-yellow-100 p-3 rounded-full mr-4">
+                <i class="fas fa-chart-pie text-yellow-500"></i>
+              </div>
+              <div>
+                <p class="text-3xl font-bold text-gray-800">{{ avgCompletionRate.toFixed(1) }}%</p>
+                <p class="text-sm text-gray-500">across all users</p>
+              </div>
+            </div>
+          </div>
+        </div>
+  
+        <div class="card bg-white">
+          <div class="card-body">
+            <h3 class="text-lg font-semibold text-gray-700 mb-3">Total Time Spent</h3>
+            <div class="flex items-center">
+              <div class="bg-purple-100 p-3 rounded-full mr-4">
+                <i class="fas fa-clock text-purple-500"></i>
+              </div>
+              <div>
+                <p class="text-3xl font-bold text-gray-800">{{ formatTotalHours(totalHoursSpent) }}</p>
+                <p class="text-sm text-gray-500">by all users</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Lesson Performance -->
+      <div class="card mb-8">
+        <div class="card-header">
+          <h2 class="card-title">Lesson Performance</h2>
+        </div>
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="th-cell">Lesson</th>
+                  <th class="th-cell">Started</th>
+                  <th class="th-cell">Completed</th>
+                  <th class="th-cell">Completion Rate</th>
+                  <th class="th-cell">Avg. Time Spent</th>
+                  <th class="th-cell">Est. Time</th>
+                  <th class="th-cell">Time Efficiency</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngIf="lessonStats && lessonStats.length > 0; else noLessonData">
+                  <tr *ngFor="let stat of lessonStats" class="hover:bg-gray-50 border-b border-gray-200">
+                    <td class="td-cell font-medium text-gray-900">
+                      {{ stat.title }}
+                    </td>
+                    <td class="td-cell">
+                      {{ stat.stats.totalUsers }}
+                    </td>
+                    <td class="td-cell">
+                      {{ stat.stats.completed }}
+                    </td>
+                    <td class="td-cell">
+                      <div class="flex items-center">
+                        <div class="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
+                          <div class="bg-blue-600 h-2.5 rounded-full" [style.width.%]="stat.stats.completionRate"></div>
+                        </div>
+                        <span>{{ stat.stats.completionRate.toFixed(1) }}%</span>
+                      </div>
+                    </td>
+                    <td class="td-cell">
+                      {{ formatTime(stat.stats.avgTimeSpentSeconds) }}
+                    </td>
+                    <td class="td-cell">
+                      {{ stat.stats.estimatedTimeMinutes }} min
+                    </td>
+                    <td class="td-cell">
+                      <span [ngClass]="{
+                        'text-red-600': stat.stats.timeEfficiencyRatio > 1.2,
+                        'text-yellow-600': stat.stats.timeEfficiencyRatio > 0.8 && stat.stats.timeEfficiencyRatio <= 1.2,
+                        'text-green-600': stat.stats.timeEfficiencyRatio <= 0.8
+                      }">
+                        {{ getEfficiencyLabel(stat.stats.timeEfficiencyRatio) }}
+                      </span>
+                    </td>
+                  </tr>
+                </ng-container>
+                <ng-template #noLessonData>
+                  <tr>
+                    <td colspan="7" class="py-8 text-center text-gray-500">
+                      <div *ngIf="isLoading; else noResults">
+                        <i class="fas fa-circle-notch fa-spin text-blue-500 mr-2"></i> Loading lesson statistics...
+                      </div>
+                      <ng-template #noResults>
+                        No lesson data available
+                      </ng-template>
+                    </td>
+                  </tr>
+                </ng-template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+  
+      <!-- Practical Exercises Performance -->
+      <div class="card mb-8">
+        <div class="card-header">
+          <h2 class="card-title">Exercise Performance</h2>
+        </div>
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="th-cell">Exercise</th>
+                  <th class="th-cell">Lesson</th>
+                  <th class="th-cell">Attempted</th>
+                  <th class="th-cell">Completed</th>
+                  <th class="th-cell">Completion Rate</th>
+                  <th class="th-cell">Avg. Time to Complete</th>
+                  <th class="th-cell">Difficulty</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngIf="exerciseStats && exerciseStats.length > 0; else noExerciseData">
+                  <tr *ngFor="let stat of exerciseStats" class="hover:bg-gray-50 border-b border-gray-200">
+                    <td class="td-cell font-medium text-gray-900">
+                      {{ stat.title }}
+                    </td>
+                    <td class="td-cell">
+                      {{ stat.lessonTitle }}
+                    </td>
+                    <td class="td-cell">
+                      {{ stat.stats.attempted }}
+                    </td>
+                    <td class="td-cell">
+                      {{ stat.stats.completed }}
+                    </td>
+                    <td class="td-cell">
+                      <div class="flex items-center">
+                        <div class="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
+                          <div class="bg-green-600 h-2.5 rounded-full" [style.width.%]="stat.stats.completionRate"></div>
+                        </div>
+                        <span>{{ stat.stats.completionRate.toFixed(1) }}%</span>
+                      </div>
+                    </td>
+                    <td class="td-cell">
+                      {{ formatTime(stat.stats.avgTimeSpent) }}
+                    </td>
+                    <td class="td-cell">
+                      <span [ngClass]="{
+                        'bg-green-100 text-green-800': stat.difficulty === 'beginner',
+                        'bg-yellow-100 text-yellow-800': stat.difficulty === 'intermediate',
+                        'bg-red-100 text-red-800': stat.difficulty === 'advanced'
+                      }" class="px-2 py-1 rounded text-xs font-medium">
+                        {{ stat.difficulty | titlecase }}
+                      </span>
+                    </td>
+                  </tr>
+                </ng-container>
+                <ng-template #noExerciseData>
+                  <tr>
+                    <td colspan="7" class="py-8 text-center text-gray-500">
+                      <div *ngIf="isLoading; else noExerciseResults">
+                        <i class="fas fa-circle-notch fa-spin text-blue-500 mr-2"></i> Loading exercise statistics...
+                      </div>
+                      <ng-template #noExerciseResults>
+                        No exercise data available
+                      </ng-template>
+                    </td>
+                  </tr>
+                </ng-template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+  
+      <!-- User Progress -->
+      <div class="card">
+        <div class="card-header flex justify-between items-center">
+          <h2 class="card-title">Recent User Progress</h2>
+          <input 
+            type="text" 
+            [(ngModel)]="userSearch" 
+            (keyup.enter)="searchUsers()" 
+            placeholder="Search users..." 
+            class="form-input py-1 px-3 text-sm w-64"
+          >
+        </div>
+        <div class="card-body p-0">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead>
+                <tr>
+                  <th class="th-cell">User</th>
+                  <th class="th-cell">Lessons Started</th>
+                  <th class="th-cell">Lessons Completed</th>
+                  <th class="th-cell">Overall Progress</th>
+                  <th class="th-cell">Time Spent</th>
+                  <th class="th-cell">Last Activity</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngIf="userProgress && userProgress.length > 0; else noUserData">
+                  <tr *ngFor="let progress of userProgress" class="hover:bg-gray-50 border-b border-gray-200">
+                    <td class="td-cell">
+                      <div class="flex items-center">
+                        <img [src]="progress.user.avatar || 'assets/images/avatar.jpg'" alt="Profile" class="w-8 h-8 rounded-full mr-2">
+                        <div>
+                          <div class="font-medium text-gray-900">{{ progress.user.name }}</div>
+                          <div class="text-xs text-gray-500">{{ progress.user.email }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="td-cell">
+                      {{ progress.lessonsStarted }} / {{ lessonStats.length }}
+                    </td>
+                    <td class="td-cell">
+                      {{ progress.lessonsCompleted }} / {{ lessonStats.length }}
+                    </td>
+                    <td class="td-cell">
+                      <div class="flex items-center">
+                        <div class="w-24 bg-gray-200 rounded-full h-2.5 mr-2">
+                          <div class="bg-blue-600 h-2.5 rounded-full" [style.width.%]="progress.completionPercentage"></div>
+                        </div>
+                        <span>{{ progress.completionPercentage.toFixed(1) }}%</span>
+                      </div>
+                    </td>
+                    <td class="td-cell">
+                      {{ formatTime(progress.timeSpent) }}
+                    </td>
+                    <td class="td-cell text-gray-500">
+                      {{ progress.lastActivity | date:'short' }}
+                    </td>
+                  </tr>
+                </ng-container>
+                <ng-template #noUserData>
+                  <tr>
+                    <td colspan="6" class="py-8 text-center text-gray-500">
+                      <div *ngIf="isLoading; else noUserResults">
+                        <i class="fas fa-circle-notch fa-spin text-blue-500 mr-2"></i> Loading user progress...
+                      </div>
+                      <ng-template #noUserResults>
+                        No user progress data available
+                      </ng-template>
+                    </td>
+                  </tr>
+                </ng-template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

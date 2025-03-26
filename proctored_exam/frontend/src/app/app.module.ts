@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { MarkdownModule, MarkdownService } from 'ngx-markdown';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -18,11 +19,10 @@ import { SubmitModalComponent } from './components/shared/submit-modal/submit-mo
 import { ExamService } from './services/exam.service';
 import { ProctorService } from './services/proctor.service';
 import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { WebCamPermissionModalComponent } from './components/shared/webcam-permission-modal/webcam-permission-modal.component';
 import { ExamInstructionsComponent } from './pages/exam/exam-instructions/exam-instructions.component';
 import { ExamResultsComponent } from './pages/exam/exam-results/exam-results.component';
-import { AuthComponent } from './pages/admin/auth/auth.component';
 import { DashboardComponent } from './pages/admin/dashboard/dashboard.component';
 import { AdminUsersComponent } from './pages/admin/users/users.component';
 import { AdminCertificationsComponent  } from './pages/admin/certification/certification.component';
@@ -37,14 +37,41 @@ import { UserDetailsDialogComponent } from './pages/admin/users/user-details-dia
 import { RoleChangeDialogComponent } from './pages/admin/users/role-change-dialog/role-change-dialog.component';
 import { CreateCertificationModalComponent } from './pages/admin/certification/create-certification-modal/create-certification-modal.component';
 import { DomainModalComponent } from './pages/admin/certification/domain-modal/domain-modal.component';
+import { ConnectionStatusComponent } from './components/shared/connection-status/connection-status.component';
+import { SaveStatusComponent } from './components/shared/save-status/save-status.component';
+import { ResumeExamDialogComponent } from './pages/exam/resume-exam-dialog/resume-exam-dialog.component';
+import { AdminLoginComponent } from './pages/admin/auth/auth.component';
+import { AuthInterceptor } from './auth-interceptor.interceptor';
+import { AuthService } from './services/auth.service';
+import { AnalyticsComponent } from './pages/admin/analytics/analytics.component';
+import { CertificationAnalyticsComponent } from './pages/admin/certification-analytics/certification-analytics.component';
+import { ActiveExamsComponent } from './pages/admin/active-exams/active-exams.component';
+import { StudentDashboardComponent } from './pages/student-dashboard/student-dashboard.component';
+import { environment } from 'src/environment/environment';
+import { AdminService } from './services/admin.service';
+import { LeaderboardService } from './services/leaderboard.service';
+import { AnalyticService } from './services/analytic.service';
+import { AdminTutorialsComponent } from './pages/admin-tutorials/admin-tutorials.component';
+import { AdminLessonsComponent } from './pages/admin-lessons/admin-lessons.component';
+import { AdminTutorialAnalyticsComponent } from './pages/admin-tutorial-analytics/admin-tutorial-analytics.component';
+import { TutorialHubComponent } from './pages/tutorial-hub/tutorial-hub.component';
+import { TutorialDetailComponent } from './pages/tutorial-detail/tutorial-detail.component';
+import { LessonComponent } from './pages/lesson/lesson.component';
+import { ExerciseComponent } from './pages/exercise/exercise.component';
 
 
+const getToken = () => {
+  return localStorage.getItem('token');
+};
 
-// Configure Socket.io with your backend URL
 const config: SocketIoConfig = { 
-  url: 'http://localhost:3000', // Replace with your backend URL
+  url: environment.api,
   options: {
-    transports: ['websocket']
+    transports: ['websocket'],
+    autoConnect: false,
+    query: {
+      token: getToken()
+    }
   }
 };
 
@@ -67,7 +94,6 @@ const config: SocketIoConfig = {
     WebCamPermissionModalComponent,
     ExamInstructionsComponent,
     ExamResultsComponent,
-    AuthComponent,
     DashboardComponent,
     AdminCertificationsComponent,
     AdminQuestionsComponent,
@@ -80,21 +106,44 @@ const config: SocketIoConfig = {
     UserDetailsDialogComponent,
     RoleChangeDialogComponent,
     CreateCertificationModalComponent,
-    DomainModalComponent
+    DomainModalComponent,
+    ConnectionStatusComponent,
+    SaveStatusComponent,
+    ResumeExamDialogComponent,
+    AdminLoginComponent,
+    AnalyticsComponent,
+    CertificationAnalyticsComponent,
+    ActiveExamsComponent,
+    StudentDashboardComponent,
+    AdminTutorialsComponent,
+    AdminLessonsComponent,
+    AdminTutorialAnalyticsComponent,
+    TutorialHubComponent,
+    TutorialHubComponent,
+    TutorialDetailComponent,
+    LessonComponent,
+    ExerciseComponent
   ],
   imports: [
     BrowserAnimationsModule,
     BrowserModule,
     CommonModule,
+    ReactiveFormsModule,
     FormsModule,
     ReactiveFormsModule,
     AppRoutingModule,
     HttpClientModule,
+    MarkdownModule.forRoot(),
     SocketIoModule.forRoot(config),
   ],
   providers: [
     ExamService,
-    ProctorService
+    ProctorService,
+    AuthService,
+    AdminService,
+    LeaderboardService,
+    AnalyticService,
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
   ],
   bootstrap: [AppComponent]
 })

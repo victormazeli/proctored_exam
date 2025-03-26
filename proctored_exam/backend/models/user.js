@@ -102,6 +102,23 @@ const UserSchema = new mongoose.Schema({
   settings: SettingsSchema,
   metrics: MetricsSchema,
   certificationProgress: [CertificationProgressSchema],
+tutorialsCompleted: {
+  type: Number,
+  default: 0
+},
+lessonsCompleted: {
+  type: Number,
+  default: 0
+},
+tutorialTimeSpent: {
+  type: Number, // in seconds
+  default: 0
+},
+
+tutorialProgress: {
+  type: Number,
+  default: 0
+},
   lastLogin: {
     type: Date
   },

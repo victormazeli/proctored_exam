@@ -1,0 +1,139 @@
+{
+    "metadata": {
+      "title": "AWS Solutions Architect Associate (SAA-C03) Complete Study Guide",
+      "description": "100% exam-aligned guide covering all domains: Resilient Architectures, Security, Cost Optimization, Hybrid Cloud, and Advanced Services.",
+      "certificationId": "AWS-SAA-C03"
+    },
+    "lessons": [
+      // ... (Previous lessons: Resilient Architectures, Well-Architected Framework, Advanced Security, etc.) ...
+  
+      // ===== Updated Existing Lessons =====
+      {
+        "title": "High-Performing Architectures (UPDATED)",
+        "content": "# Scalability & Performance\n\n- **Auto Scaling**: Dynamic scaling for EC2, ECS, and Spot Fleets.\n- **Caching**: CloudFront (with Lambda@Edge), ElastiCache (Redis/Memcached).\n- **Content Delivery**: S3 Transfer Acceleration, Global Accelerator.\n- **Graviton Instances**: ARM-based instances for cost-performance optimization.",
+        "practicalExercises": [
+          {
+            "title": "Deploy a Spot Fleet with Auto Scaling",
+            "description": "Optimize costs using Spot Instances.",
+            "instructions": "1. Navigate to EC2 → Spot Requests\n2. Create a Spot Fleet with mixed instance types\n3. Configure Auto Scaling policies\n4. Test termination/replacement of Spot Instances",
+            "expectedOutput": "Cost-effective fleet scaling with Spot Instances.",
+            "solution": "1. Use EC2 → Spot Requests → Define capacity requirements.\n2. Set up termination notifications.",
+            "hints": [
+              { "text": "Use instance diversification to avoid interruptions.", "order": 1 }
+            ],
+            "difficulty": "advanced",
+            "estimatedTime": 60
+          }
+        ]
+      },
+      {
+        "title": "Secure Applications & Architectures (UPDATED)",
+        "content": "# Advanced Security\n\n- **AWS Shield Advanced**: DDoS protection for CloudFront/ELB.\n- **AWS WAF**: Block SQLi, XSS, and geographic threats.\n- **Secrets Manager**: Rotate RDS credentials automatically.\n- **Certificate Manager (ACM)**: Free TLS certificates for HTTPS.",
+        "practicalExercises": [
+          {
+            "title": "Configure AWS WAF for CloudFront",
+            "description": "Block malicious IPs and SQL injection attacks.",
+            "instructions": "1. Create WAF Web ACL\n2. Add rules (SQLi, IP blacklist)\n3. Associate ACL with CloudFront distribution\n4. Test blocked requests",
+            "expectedOutput": "CloudFront distribution protected by WAF rules.",
+            "solution": "1. Use AWS WAF → Create Web ACL → Add managed rules.\n2. Test with `curl` from blocked IP.",
+            "hints": [
+              { "text": "Use AWS’s IP reputation list for automated blocking.", "order": 1 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 45
+          }
+        ]
+      },
+      {
+        "title": "Cost-Optimized Architectures (UPDATED)",
+        "content": "# Cost Optimization Strategies\n\n- **Spot Fleets**: Mix Spot/On-Demand instances.\n- **Savings Plans**: Commit to 1/3-year usage for discounts.\n- **S3 Intelligent-Tiering**: Auto-tier objects based on access patterns.\n- **Trusted Advisor**: Idle load balancer checks, underutilized EBS volumes.",
+        "practicalExercises": [
+          {
+            "title": "Optimize EBS Volumes with GP3",
+            "description": "Migrate gp2 volumes to gp3 for cost savings.",
+            "instructions": "1. Identify gp2 volumes in EC2 Console\n2. Create gp3 snapshots\n3. Replace volumes\n4. Validate performance",
+            "expectedOutput": "Reduced EBS costs with gp3 volumes.",
+            "solution": "1. Use EC2 → Volumes → Modify Volume Type.\n2. Monitor IOPS/throughput in CloudWatch.",
+            "hints": [
+              { "text": "Use CloudWatch to baseline performance.", "order": 1 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 30
+          }
+        ]
+      },
+      {
+        "title": "Deployment & Migration Strategies (UPDATED)",
+        "content": "# CI/CD & Modernization\n\n- **AWS CDK**: Infrastructure as Code (Python/TypeScript).\n- **Elastic Beanstalk**: Managed app deployment (PaaS).\n- **App Runner**: Fully managed container deployment.\n- **Migration Hub**: Track on-premises to cloud migrations.",
+        "practicalExercises": [
+          {
+            "title": "Migrate an On-Premises DB to RDS with DMS",
+            "description": "Replicate a MySQL database to RDS.",
+            "instructions": "1. Set up DMS replication instance\n2. Configure source (on-premises) and target (RDS) endpoints\n3. Create replication task\n4. Monitor CDC (Change Data Capture)",
+            "expectedOutput": "RDS instance synced with on-premises database.",
+            "solution": "1. Use DMS → Create Replication Task → Ongoing replication.\n2. Validate data consistency.",
+            "hints": [
+              { "text": "Test with a small dataset first.", "order": 1 }
+            ],
+            "difficulty": "advanced",
+            "estimatedTime": 90
+          }
+        ]
+      },
+      {
+        "title": "Advanced Networking (UPDATED)",
+        "content": "# VPC & Connectivity\n\n- **Transit Gateway**: Hub-and-spoke VPC connectivity.\n- **PrivateLink**: Securely expose services without public IPs.\n- **VPC Endpoints (Gateway/Interface)**: Private S3/DynamoDB access.\n- **Route 53 Resolver**: Hybrid DNS resolution.",
+        "practicalExercises": [
+          {
+            "title": "Configure AWS PrivateLink for an S3 Bucket",
+            "description": "Expose S3 privately via VPC Endpoint.",
+            "instructions": "1. Create VPC Endpoint (Gateway) for S3\n2. Update route tables\n3. Restrict bucket access via endpoint policy\n4. Test access from private subnet",
+            "expectedOutput": "S3 accessible only via VPC Endpoint.",
+            "solution": "1. Use VPC → Endpoints → Create S3 Gateway Endpoint.\n2. Attach bucket policy restricting access to the endpoint.",
+            "hints": [
+              { "text": "Use `aws s3 ls` from an EC2 instance to test.", "order": 1 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 45
+          }
+        ]
+      },
+      {
+        "title": "Serverless Architectures (UPDATED)",
+        "content": "# Serverless Patterns\n\n- **Step Functions**: Coordinate Lambda functions for workflows.\n- **EventBridge**: Event-driven serverless apps.\n- **SQS/SNS**: Decouple microservices.\n- **Lambda Destinations**: Asynchronous invocation handling.",
+        "practicalExercises": [
+          {
+            "title": "Orchestrate a Workflow with Step Functions",
+            "description": "Build a loan approval state machine.",
+            "instructions": "1. Define states (Choice, Lambda, Wait) in ASL\n2. Deploy with Step Functions\n3. Test approval/rejection paths",
+            "expectedOutput": "Visual workflow executing Lambda functions based on inputs.",
+            "solution": "1. Use Step Functions → Design state machine → Integrate Lambda.\n2. Test with JSON payloads.",
+            "hints": [
+              { "text": "Use the `Choice` state for conditional logic.", "order": 1 }
+            ],
+            "difficulty": "advanced",
+            "estimatedTime": 60
+          }
+        ]
+      },
+      {
+        "title": "Monitoring & Logging (UPDATED)",
+        "content": "# Full Observability\n\n- **CloudWatch Synthetics**: Monitor API endpoints with canaries.\n- **CloudTrail Lake**: Query audit logs across accounts.\n- **VPC Flow Logs**: Analyze network traffic patterns.\n- **X-Ray Insights**: Auto-detect anomalies in traces.",
+        "practicalExercises": [
+          {
+            "title": "Create a CloudWatch Synthetic Canary",
+            "description": "Monitor a web API for uptime.",
+            "instructions": "1. Navigate to CloudWatch → Synthetics\n2. Create canary with Puppeteer script\n3. Set 5-minute frequency\n4. Trigger alerts on failure",
+            "expectedOutput": "Canary monitoring API endpoint availability.",
+            "solution": "1. Use sample script to ping API Gateway.\n2. Configure SNS alerts.",
+            "hints": [
+              { "text": "Test with a public REST API first.", "order": 1 }
+            ],
+            "difficulty": "intermediate",
+            "estimatedTime": 30
+          }
+        ]
+      }
+      // ... (Remaining lessons: Data Processing, Hybrid Architectures, etc. are retained as previously shared) ...
+    ]
+  }

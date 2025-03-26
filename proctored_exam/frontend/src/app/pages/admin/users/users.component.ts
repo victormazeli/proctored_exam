@@ -2,13 +2,13 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { CreateUserDialogComponent } from './create-user-dialog/create-user-dialog.component';
+import { RoleChangeDialogComponent } from './role-change-dialog/role-change-dialog.component';
+import { UserDetailsDialogComponent } from './user-details-dialog/user-details-dialog.component';
 import { AdminService } from 'src/app/services/admin.service';
 import { AvatarService } from 'src/app/services/avatar.service';
 import { DialogService } from 'src/app/services/dialog.service';
 import { NotificationService } from 'src/app/services/notification.service';
-import { CreateUserDialogComponent } from './create-user-dialog/create-user-dialog.component';
-import { RoleChangeDialogComponent } from './role-change-dialog/role-change-dialog.component';
-import { UserDetailsDialogComponent } from './user-details-dialog/user-details-dialog.component';
 
 interface User {
   _id: string;

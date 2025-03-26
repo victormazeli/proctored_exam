@@ -1,7 +1,10 @@
-// admin-dashboard.component.ts
+// Updated admin-dashboard.component.ts
 import { Component, OnInit } from '@angular/core';
+import { User } from 'src/app/models/auth.interface';
 import { AdminService } from 'src/app/services/admin.service';
-
+import { AuthService } from 'src/app/services/auth.service';
+import { finalize } from 'rxjs/operators';
+import { TutorialService } from 'src/app/services/tutorial.service';
 
 interface StatCard {
   icon: string;
@@ -21,6 +24,7 @@ interface CertPassRate {
 }
 
 interface ExamAttempt {
+  _id: string;
   userId: {
     username: string;
   };
@@ -58,13 +62,26 @@ export class DashboardComponent implements OnInit {
     userCount: 0,
     certificationCount: 0,
     examCount: 0,
+    questionCount: 0,
     attemptCount: 0,
     lastWeekAttempts: 0
   };
 
+  tutorialStats: any = {
+    total: 0,
+    active: 0,
+    lessons: 0
+  };
+  
+
   recentAttempts: ExamAttempt[] = [];
   certPassRates: CertPassRate[] = [];
   activeExamCount = 0;
+  
+  // Loading and error states
+  isLoading = false;
+  hasError = false;
+  errorMessage = '';
   
   statCards: StatCard[] = [
     {
@@ -102,6 +119,15 @@ export class DashboardComponent implements OnInit {
       link: '/admin/analytics',
       linkText: 'View analytics',
       hoverClass: 'hover:text-yellow-600'
+    },
+    {
+      icon: 'fas fa-question-circle',
+      iconClass: 'bg-red-100 text-red-600',
+      title: 'Total Questions',
+      value: 0,
+      link: '/admin/questions',
+      linkText: 'Manage questions',
+      hoverClass: 'hover:text-red-600'
     }
   ];
 
@@ -148,31 +174,116 @@ export class DashboardComponent implements OnInit {
     }
   ];
 
-  constructor(private adminService: AdminService) {}
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+  totalAttempts = 0;
+
+  // Search
+  searchTerm = '';
+
+  constructor(private adminService: AdminService, private authService: AuthService, private tutorialService: TutorialService) {}
 
   ngOnInit(): void {
     this.loadDashboardData();
     this.getActiveExamCount();
+    this.loadTutorialStats();
   }
 
   loadDashboardData(): void {
-    this.adminService.getDashboardStats().subscribe(data => {
-      this.stats = data.stats;
-      this.recentAttempts = data.recentAttempts;
-      this.certPassRates = data.certPassRates;
-      
-      // Update stat cards with actual values
-      this.statCards[0].value = this.stats.userCount;
-      this.statCards[1].value = this.stats.certificationCount;
-      this.statCards[2].value = this.stats.examCount;
-      this.statCards[3].value = this.stats.attemptCount;
-    });
+    this.isLoading = true;
+    this.hasError = false;
+    
+    this.adminService.getDashboardStats()
+      .pipe(
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
+      .subscribe(
+        data => {
+          this.stats = data.stats;
+          this.recentAttempts = data.recentAttempts;
+          this.certPassRates = data.certPassRates;
+          this.totalAttempts = data.totalAttemptsCount || 0;
+          
+          // Update stat cards with actual values
+          this.statCards[0].value = this.stats.userCount;
+          this.statCards[1].value = this.stats.certificationCount;
+          this.statCards[2].value = this.stats.examCount;
+          this.statCards[3].value = this.stats.attemptCount;
+          this.statCards[4].value = this.stats.questionCount;
+        },
+        error => {
+          this.hasError = true;
+          this.errorMessage = 'Failed to load dashboard data. Please try again later.';
+          console.error('Error loading dashboard data:', error);
+        }
+      );
   }
 
   getActiveExamCount(): void {
-    this.adminService.getActiveExamCount().subscribe(data => {
-      this.activeExamCount = data.count;
-      this.quickActions[3].description = `${this.activeExamCount} exams in progress`;
-    });
+    this.adminService.getActiveExamCount().subscribe(
+      data => {
+        this.activeExamCount = data.count;
+        this.quickActions[3].description = `${this.activeExamCount} exams in progress`;
+      },
+      error => {
+        console.error('Error fetching active exam count:', error);
+      }
+    );
+  }
+
+  searchAttempts(): void {
+    this.currentPage = 1;
+    this.loadAttemptsWithFilters();
+  }
+
+  loadAttemptsWithFilters(): void {
+    this.isLoading = true;
+    this.adminService.getFilteredAttempts(this.searchTerm, this.currentPage, this.pageSize, '')
+      .pipe(
+        finalize(() => {
+          this.isLoading = false;
+        })
+      )
+      .subscribe(
+        data => {
+          this.recentAttempts = data.attempts;
+          this.totalAttempts = data.total;
+        },
+        error => {
+          console.error('Error loading filtered attempts:', error);
+        }
+      );
+  }
+
+  changePage(page: number): void {
+    this.currentPage = page;
+    this.loadAttemptsWithFilters();
+  }
+
+  refreshData(): void {
+    this.loadDashboardData();
+    this.getActiveExamCount();
+  }
+
+  currentPageCalculation(totalAttempts: number, pageSize: number): number {
+    return Math.ceil(totalAttempts / pageSize)
+  }
+
+  loadTutorialStats(): void {
+    this.tutorialService.getTutorialStats().subscribe(
+      response => {
+        if (response.success) {
+          this.tutorialStats = response.data;
+        } else {
+          console.error('Failed to load tutorial statistics');
+        }
+      },
+      error => {
+        console.error('Error loading tutorial statistics:', error);
+      }
+    );
   }
 }
