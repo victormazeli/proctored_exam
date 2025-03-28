@@ -34,8 +34,11 @@ export class AuthInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
           // Auto logout if 401 response returned from api
+          const isAdminRoute = this.router.url.startsWith('/admin');
           this.authService.logout();
-          this.router.navigate(['/auth/login'], {
+          
+          const loginRoute = isAdminRoute ? '/auth/admin/login' : '/auth/login';
+          this.router.navigate([loginRoute], {
             queryParams: { returnUrl: this.router.url }
           });
         }
