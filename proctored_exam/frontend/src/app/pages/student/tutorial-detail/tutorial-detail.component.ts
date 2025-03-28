@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { TutorialService } from '../../services/tutorial.service';
-import { AuthService } from '../../services/auth.service';
+import { TutorialService } from '../../../services/tutorial.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-tutorial-detail',
@@ -51,7 +51,7 @@ export class TutorialDetailComponent implements OnInit {
   }
   
   navigateToLesson(lessonId: string): void {
-    this.router.navigate(['/lessons', lessonId]);
+    this.router.navigate(['/student/lessons', lessonId]);
   }
   
   getLessonStatusIcon(status: string): string {

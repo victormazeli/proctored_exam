@@ -11,8 +11,8 @@ import { FooterComponent } from './components/layouts/footer/footer.component';
 import { LoginComponent } from './pages/auth/login/login.component';
 import { RegisterComponent } from './pages/auth/register/register.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ExamComponent } from './pages/exam/exam/exam.component';
-import { SelectExamComponent } from './pages/exam/select-exam/select-exam.component';
+import { ExamComponent } from './pages/student/exam/exam/exam.component';
+import { SelectExamComponent } from './pages/student/exam/select-exam/select-exam.component';
 import { TimeWarningModalComponent } from './components/shared/time-warning-modal/time-warning-modal.component';
 import { ProctorWarningModalComponent } from './components/shared/proctor-warning-modal/proctor-warning-modal.component';
 import { SubmitModalComponent } from './components/shared/submit-modal/submit-modal.component';
@@ -21,8 +21,8 @@ import { ProctorService } from './services/proctor.service';
 import { SocketIoModule, SocketIoConfig } from 'ngx-socket-io';
 import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { WebCamPermissionModalComponent } from './components/shared/webcam-permission-modal/webcam-permission-modal.component';
-import { ExamInstructionsComponent } from './pages/exam/exam-instructions/exam-instructions.component';
-import { ExamResultsComponent } from './pages/exam/exam-results/exam-results.component';
+import { ExamInstructionsComponent } from './pages/student/exam/exam-instructions/exam-instructions.component';
+import { ExamResultsComponent } from './pages/student/exam/exam-results/exam-results.component';
 import { DashboardComponent } from './pages/admin/dashboard/dashboard.component';
 import { AdminUsersComponent } from './pages/admin/users/users.component';
 import { AdminCertificationsComponent  } from './pages/admin/certification/certification.component';
@@ -39,25 +39,22 @@ import { CreateCertificationModalComponent } from './pages/admin/certification/c
 import { DomainModalComponent } from './pages/admin/certification/domain-modal/domain-modal.component';
 import { ConnectionStatusComponent } from './components/shared/connection-status/connection-status.component';
 import { SaveStatusComponent } from './components/shared/save-status/save-status.component';
-import { ResumeExamDialogComponent } from './pages/exam/resume-exam-dialog/resume-exam-dialog.component';
+import { ResumeExamDialogComponent } from './pages/student/exam/resume-exam-dialog/resume-exam-dialog.component';
 import { AdminLoginComponent } from './pages/admin/auth/auth.component';
 import { AuthInterceptor } from './auth-interceptor.interceptor';
 import { AuthService } from './services/auth.service';
 import { AnalyticsComponent } from './pages/admin/analytics/analytics.component';
 import { CertificationAnalyticsComponent } from './pages/admin/certification-analytics/certification-analytics.component';
 import { ActiveExamsComponent } from './pages/admin/active-exams/active-exams.component';
-import { StudentDashboardComponent } from './pages/student-dashboard/student-dashboard.component';
+import { StudentDashboardComponent } from './pages/student/student-dashboard/student-dashboard.component';
 import { environment } from 'src/environment/environment';
 import { AdminService } from './services/admin.service';
 import { LeaderboardService } from './services/leaderboard.service';
 import { AnalyticService } from './services/analytic.service';
-import { AdminTutorialsComponent } from './pages/admin-tutorials/admin-tutorials.component';
-import { AdminLessonsComponent } from './pages/admin-lessons/admin-lessons.component';
-import { AdminTutorialAnalyticsComponent } from './pages/admin-tutorial-analytics/admin-tutorial-analytics.component';
-import { TutorialHubComponent } from './pages/tutorial-hub/tutorial-hub.component';
-import { TutorialDetailComponent } from './pages/tutorial-detail/tutorial-detail.component';
-import { LessonComponent } from './pages/lesson/lesson.component';
-import { ExerciseComponent } from './pages/exercise/exercise.component';
+import { TutorialHubComponent } from './pages/student/tutorial-hub/tutorial-hub.component';
+import { TutorialDetailComponent } from './pages/student/tutorial-detail/tutorial-detail.component';
+import { LessonComponent } from './pages/student/lesson/lesson.component';
+import { ExerciseComponent } from './pages/student/exercise/exercise.component';
 
 
 const getToken = () => {
@@ -86,43 +83,10 @@ const config: SocketIoConfig = {
     FooterComponent,
     LoginComponent,
     RegisterComponent,
-    ExamComponent,
-    SelectExamComponent,
-    SubmitModalComponent,
-    TimeWarningModalComponent,
-    ProctorWarningModalComponent,
-    WebCamPermissionModalComponent,
-    ExamInstructionsComponent,
-    ExamResultsComponent,
-    DashboardComponent,
-    AdminCertificationsComponent,
-    AdminQuestionsComponent,
-    AdminExamsComponent,
-    AdminUsersComponent,
-    UserAvatarComponent,
-    NotificationComponent,
-    UploadDialogComponent,
-    CreateUserDialogComponent,
-    UserDetailsDialogComponent,
-    RoleChangeDialogComponent,
-    CreateCertificationModalComponent,
-    DomainModalComponent,
-    ConnectionStatusComponent,
-    SaveStatusComponent,
-    ResumeExamDialogComponent,
     AdminLoginComponent,
-    AnalyticsComponent,
-    CertificationAnalyticsComponent,
-    ActiveExamsComponent,
-    StudentDashboardComponent,
-    AdminTutorialsComponent,
-    AdminLessonsComponent,
-    AdminTutorialAnalyticsComponent,
-    TutorialHubComponent,
-    TutorialHubComponent,
-    TutorialDetailComponent,
-    LessonComponent,
-    ExerciseComponent
+    SaveStatusComponent,
+    ConnectionStatusComponent,
+    NotificationComponent,
   ],
   imports: [
     BrowserAnimationsModule,
@@ -130,7 +94,6 @@ const config: SocketIoConfig = {
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
-    ReactiveFormsModule,
     AppRoutingModule,
     HttpClientModule,
     MarkdownModule.forRoot(),

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { TutorialService } from '../../services/tutorial.service';
-import { AuthService } from '../../services/auth.service';
+import { TutorialService } from '../../../services/tutorial.service';
+import { AuthService } from '../../../services/auth.service';
 import { ExamService } from 'src/app/services/exam.service';
 
 @Component({
@@ -69,7 +69,7 @@ export class TutorialHubComponent implements OnInit {
   }
   
   navigateToTutorial(id: string): void {
-    this.router.navigate(['/tutorials', id]);
+    this.router.navigate(['/student/tutorials', id]);
   }
   
   getCategoryColor(index: number): string {

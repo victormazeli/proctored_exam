@@ -1,7 +1,7 @@
 // exercise.component.ts
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LessonService } from '../../services/lesson.service';
+import { LessonService } from '../../../services/lesson.service';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MarkdownService } from 'ngx-markdown';
 

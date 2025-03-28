@@ -252,25 +252,9 @@ export class AdminLayoutComponent {
 @Component({
   selector: 'app-auth-layout',
   template: `
-    <div class="min-h-screen flex flex-col items-center justify-center p-4">
-      <div class="w-full max-w-sm mb-8">
-        <a routerLink="/" class="block text-center">
-          <img class="h-12 mx-auto" src="/assets/images/logo.svg" alt="Certification Practice Platform">
-          <h1 class="text-2xl font-bold text-gray-800 mt-4">Certification Practice Platform</h1>
-        </a>
-      </div>
-      <div class="w-full max-w-md">
-        <router-outlet></router-outlet>
-      </div>
-      <div class="mt-8 text-center">
-        <p class="text-sm text-gray-500">&copy; {{ year }} Certification Practice Platform</p>
-        <div class="mt-2 flex justify-center space-x-4">
-          <a routerLink="/privacy" class="text-sm text-gray-500 hover:text-gray-700">Privacy Policy</a>
-          <a routerLink="/terms" class="text-sm text-gray-500 hover:text-gray-700">Terms of Service</a>
-          <a routerLink="/contact" class="text-sm text-gray-500 hover:text-gray-700">Contact Us</a>
-        </div>
-      </div>
-    </div>
+     <main>
+      <router-outlet></router-outlet>
+    </main>
   `,
   styles: []
 })

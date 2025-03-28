@@ -1,229 +1,200 @@
 <!-- admin-questions.component.html -->
-<div class="admin-questions">
-    <div class="container mx-auto px-4 py-8">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800">Question Management</h1>
-        <div class="flex space-x-4">
-          <button (click)="openExportModal()" class="btn btn-outline">
-            <i class="fas fa-file-export mr-2"></i> Export
-          </button>
-          <button (click)="openImportModal()" class="btn btn-outline">
-            <i class="fas fa-file-import mr-2"></i> Import
-          </button>
-          <button (click)="openAddQuestionModal()" class="btn btn-primary">
-            <i class="fas fa-plus mr-2"></i> Add Question
-          </button>
-        </div>
-      </div>
-  
-      <!-- Filters -->
-      <div class="card mb-6">
-        <div class="card-body">
-          <form (ngSubmit)="applyFilters(filters)" #filterForm="ngForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="form-group">
-              <label for="certification" class="form-label">Certification</label>
-              <select id="certification" [(ngModel)]="filters.certification" name="certification" class="form-select">
-                <option value="">All Certifications</option>
-                <option *ngFor="let cert of certifications" [value]="cert._id">
-                  {{ cert.name }} ({{ cert.code }})
-                </option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="domain" class="form-label">Domain</label>
-              <select id="domain" [(ngModel)]="filters.domain" name="domain" class="form-select">
-                <option value="">All Domains</option>
-                <option *ngFor="let domain of domains" [value]="domain._id">
-                  {{ domain.name }}
-                </option>
-              </select>
-            </div>
-            
-            <div class="form-group">
-              <label for="search" class="form-label">Search</label>
-              <input type="text" id="search" [(ngModel)]="filters.search" name="search" 
-                    class="form-input" placeholder="Search text, tags...">
-            </div>
-            
-            <div class="form-group flex items-end">
-              <button type="submit" class="btn btn-secondary w-full">
-                <i class="fas fa-search mr-2"></i> Filter
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-  
-      <!-- Questions Table -->
-      <div class="card">
-        <div class="card-body p-0">
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr>
-                  <th class="th-cell">Text</th>
-                  <th class="th-cell">Certification</th>
-                  <th class="th-cell">Domain</th>
-                  <th class="th-cell">Difficulty</th>
-                  <th class="th-cell">Analytics</th>
-                  <th class="th-cell">Status</th>
-                  <th class="th-cell">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <ng-container *ngIf="questions && questions.length > 0; else noQuestions">
-                  <tr *ngFor="let question of questions" class="hover:bg-gray-50 border-b border-gray-200">
-                    <td class="td-cell">
-                      <div class="question-preview">
-                        {{ question.text.length > 100 ? (question.text.substring(0, 100) + '...') : question.text }}
-                      </div>
-                    </td>
-                    <td class="td-cell">
-                      <span class="cert-badge">{{ question.certificationId.code }}</span>
-                    </td>
-                    <td class="td-cell">
-                      <span class="domain-badge">{{ question.domain }}</span>
-                    </td>
-                    <td class="td-cell">
-                      <div class="difficulty-indicator">
-                        <span *ngFor="let i of [1,2,3,4,5]" class="difficulty-dot" 
-                              [ngClass]="{'active': i <= question.difficulty}"></span>
-                      </div>
-                    </td>
-                    <td class="td-cell">
-                      <div class="analytics-preview">
-                        <div class="flex items-center space-x-1">
-                          <i class="fas fa-chart-line text-blue-500"></i>
-                          <span>{{ question.analytics.timesAnswered || 0 }} attempts</span>
-                        </div>
-                        <div *ngIf="question.analytics && question.analytics.timesAnswered > 0" class="text-xs text-gray-500">
-                            {{ ((question.analytics.timesCorrect / question.analytics.timesAnswered) * 100).toFixed(1) }}% correct
-                          </div>
-                      </div>
-                    </td>
-                    <td class="td-cell">
-                      <span class="status-badge" [ngClass]="question.active ? 'active' : 'inactive'">
-                        {{ question.active ? 'Active' : 'Inactive' }}
-                      </span>
-                    </td>
-                    <td class="td-cell">
-                      <div class="flex space-x-2">
-                        <button class="action-btn" (click)="openEditQuestionModal(question._id)" title="Edit">
-                          <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="action-btn" (click)="viewQuestionStats(question._id)" title="View Stats">
-                          <i class="fas fa-chart-bar"></i>
-                        </button>
-                        <button class="action-btn" (click)="confirmDeleteQuestion(question._id)" title="Delete">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </ng-container>
-                <ng-template #noQuestions>
-                  <tr>
-                    <td colspan="7" class="py-8 text-center text-gray-500">
-                      No questions found matching your criteria
-                    </td>
-                  </tr>
-                </ng-template>
-              </tbody>
-            </table>
+<div class="admin-questions min-h-screen bg-gray-50">
+    <div class="max-w-[1440px] w-full mx-auto px-4 py-8 relative">
+      <div class="flex flex-col space-y-6">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <h1 class="text-2xl font-bold text-gray-800">Question Management</h1>
+          <div class="flex flex-wrap gap-2">
+            <button (click)="openExportModal()" class="btn btn-outline">
+              <i class="fas fa-file-export mr-2"></i> Export
+            </button>
+            <button (click)="openImportModal()" class="btn btn-outline">
+              <i class="fas fa-file-import mr-2"></i> Import
+            </button>
+            <button (click)="openAddQuestionModal()" class="btn btn-primary">
+              <i class="fas fa-plus mr-2"></i> Add Question
+            </button>
           </div>
+        </div>
   
-          <!-- Pagination -->
-          <div *ngIf="pagination.totalPages > 1" class="pagination">
-            <div class="pagination-info">
-              Showing {{ (pagination.page - 1) * pagination.limit + 1 }} to 
-              {{ pagination.page * pagination.limit > pagination.totalQuestions ? 
-                   pagination.totalQuestions : pagination.page * pagination.limit }} 
-              of {{ pagination.totalQuestions }} questions
+        <!-- Filters -->
+        <div class="card">
+          <div class="card-body">
+            <form (ngSubmit)="applyFilters(filters)" #filterForm="ngForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="form-group">
+                <label for="certification" class="form-label">Certification</label>
+                <select id="certification" [(ngModel)]="filters.certification" name="certification" class="form-select w-full">
+                  <option value="">All Certifications</option>
+                  <option *ngFor="let cert of certifications" [value]="cert._id">
+                    {{ cert.name }} ({{ cert.code }})
+                  </option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="domain" class="form-label">Domain</label>
+                <select id="domain" [(ngModel)]="filters.domain" name="domain" class="form-select w-full">
+                  <option value="">All Domains</option>
+                  <option *ngFor="let domain of domains" [value]="domain._id">
+                    {{ domain.name }}
+                  </option>
+                </select>
+              </div>
+              
+              <div class="form-group">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" id="search" [(ngModel)]="filters.search" name="search" 
+                      class="form-input w-full" placeholder="Search text, tags...">
+              </div>
+              
+              <div class="form-group flex items-end">
+                <button type="submit" class="btn btn-secondary w-full">
+                  <i class="fas fa-search mr-2"></i> Filter
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+  
+        <!-- Questions Table -->
+        <div class="card overflow-hidden">
+          <div class="card-body p-0">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[35%]">Text</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">Certification</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">Domain</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">Difficulty</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">Analytics</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[7%]">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[7%]">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <ng-container *ngIf="questions && questions.length > 0; else noQuestions">
+                    <tr *ngFor="let question of questions" class="hover:bg-gray-50">
+                      <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900 line-clamp-2">{{ question.text }}</div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class="cert-badge">{{ question.certificationId.code }}</span>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 whitespace-nowrap">
+                          {{ question.domain }}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="difficulty-indicator">
+                          <span *ngFor="let i of [1,2,3,4,5]" class="difficulty-dot" 
+                                [ngClass]="{'active': i <= question.difficulty}"></span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="text-sm">
+                          <div class="flex items-center gap-1">
+                            <i class="fas fa-chart-line text-blue-500"></i>
+                            <span>{{ question.analytics.timesAnswered || 0 }}</span>
+                          </div>
+                          <div *ngIf="question.analytics && question.analytics.timesAnswered > 0" class="text-xs text-gray-500">
+                            {{ ((question.analytics.timesCorrect / question.analytics.timesAnswered) * 100).toFixed(1) }}%
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        <span class="status-badge" [ngClass]="question.active ? 'active' : 'inactive'">
+                          {{ question.active ? 'Active' : 'Inactive' }}
+                        </span>
+                      </td>
+                      <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                          <button class="action-btn" (click)="openEditQuestionModal(question._id)" title="Edit">
+                            <i class="fas fa-edit"></i>
+                          </button>
+                          <button class="action-btn" (click)="viewQuestionStats(question._id)" title="View Stats">
+                            <i class="fas fa-chart-bar"></i>
+                          </button>
+                          <button class="action-btn" (click)="confirmDeleteQuestion(question._id)" title="Delete">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
+                  <ng-template #noQuestions>
+                    <tr>
+                      <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                        No questions found matching your criteria
+                      </td>
+                    </tr>
+                  </ng-template>
+                </tbody>
+              </table>
             </div>
-            <div class="pagination-controls">
-              <button [disabled]="pagination.page === 1" 
-                     (click)="onPageChange(pagination.page - 1)"
-                     [ngClass]="{'pagination-btn': true, 'disabled': pagination.page === 1}">
-                <i class="fas fa-chevron-left"></i>
-              </button>
-              
-              <!-- Pages display logic -->
-              <ng-container *ngIf="pagination.totalPages <= 5">
-                <button *ngFor="let page of [].constructor(pagination.totalPages); let i = index" 
-                       (click)="onPageChange(i + 1)"
-                       [ngClass]="{'pagination-btn': true, 'active': pagination.page === i + 1}">
-                  {{ i + 1 }}
-                </button>
-              </ng-container>
-              
-              <ng-container *ngIf="pagination.totalPages > 5">
-                <!-- First page -->
-                <button (click)="onPageChange(1)"
-                       [ngClass]="{'pagination-btn': true, 'active': pagination.page === 1}">
-                  1
-                </button>
-                
-                <!-- Ellipsis if not near start -->
-                <span *ngIf="pagination.page > 3" class="pagination-ellipsis">...</span>
-                
-                <!-- Pages around current -->
-<!-- Pages around current -->
-<ng-container *ngIf="pagination.totalPages > 5">
-    <!-- First page -->
-    <button (click)="onPageChange(1)"
-           [ngClass]="{'pagination-btn': true, 'active': pagination.page === 1}">
-      1
-    </button>
-    
-    <!-- Ellipsis if not near start -->
-    <span *ngIf="pagination.page > 3" class="pagination-ellipsis">...</span>
-    
-    <!-- Pages around current -->
-    <ng-container *ngFor="let i of [-1, 0, 1]">
-      <ng-container *ngIf="(pagination.page + i) > 1 && (pagination.page + i) < pagination.totalPages">
-        <button (click)="onPageChange(pagination.page + i)"
-              [ngClass]="{'pagination-btn': true, 'active': i === 0}">
-          {{ pagination.page + i }}
-        </button>
-      </ng-container>
-    </ng-container>
-    
-    <!-- Ellipsis if not near end -->
-    <span *ngIf="pagination.page < pagination.totalPages - 2" class="pagination-ellipsis">...</span>
-    
-    <!-- Last page -->
-    <button (click)="onPageChange(pagination.totalPages)"
-           [ngClass]="{'pagination-btn': true, 'active': pagination.page === pagination.totalPages}">
-      {{ pagination.totalPages }}
-    </button>
-  </ng-container>
   
-  <!-- Show all pages if 5 or fewer -->
-  <ng-container *ngIf="pagination.totalPages <= 5">
-    <ng-container *ngFor="let page of [].constructor(pagination.totalPages); let i = index">
-      <button (click)="onPageChange(i + 1)"
-             [ngClass]="{'pagination-btn': true, 'active': pagination.page === i + 1}">
-        {{ i + 1 }}
-      </button>
-    </ng-container>
-  </ng-container>
-                
-                <!-- Ellipsis if not near end -->
-                <span *ngIf="pagination.page < pagination.totalPages - 2" class="pagination-ellipsis">...</span>
-                
-                <!-- Last page -->
-                <button (click)="onPageChange(pagination.totalPages)"
-                       [ngClass]="{'pagination-btn': true, 'active': pagination.page === pagination.totalPages}">
-                  {{ pagination.totalPages }}
+            <!-- Pagination -->
+            <div *ngIf="pagination.totalPages > 1" class="pagination">
+              <div class="pagination-info">
+                Showing {{ (pagination.page - 1) * pagination.limit + 1 }} to 
+                {{ pagination.page * pagination.limit > pagination.totalQuestions ? 
+                     pagination.totalQuestions : pagination.page * pagination.limit }} 
+                of {{ pagination.totalQuestions }} questions
+              </div>
+              <div class="pagination-controls">
+                <button [disabled]="pagination.page === 1" 
+                       (click)="onPageChange(pagination.page - 1)"
+                       [ngClass]="{'pagination-btn': true, 'disabled': pagination.page === 1}">
+                  <i class="fas fa-chevron-left"></i>
                 </button>
-              </ng-container>
-              
-              <button [disabled]="pagination.page === pagination.totalPages" 
-                     (click)="onPageChange(pagination.page + 1)"
-                     [ngClass]="{'pagination-btn': true, 'disabled': pagination.page === pagination.totalPages}">
-                <i class="fas fa-chevron-right"></i>
-              </button>
+                
+                <!-- Pages display logic -->
+                <ng-container *ngIf="pagination.totalPages <= 5">
+                  <button *ngFor="let page of [].constructor(pagination.totalPages); let i = index" 
+                         (click)="onPageChange(i + 1)"
+                         [ngClass]="{'pagination-btn': true, 'active': pagination.page === i + 1}">
+                    {{ i + 1 }}
+                  </button>
+                </ng-container>
+                
+                <ng-container *ngIf="pagination.totalPages > 5">
+                  <!-- First page -->
+                  <button (click)="onPageChange(1)"
+                         [ngClass]="{'pagination-btn': true, 'active': pagination.page === 1}">
+                    1
+                  </button>
+                  
+                  <!-- Ellipsis if not near start -->
+                  <span *ngIf="pagination.page > 3" class="pagination-ellipsis">...</span>
+                  
+                  <!-- Pages around current -->
+                  <ng-container *ngFor="let i of [-1, 0, 1]">
+                    <ng-container *ngIf="(pagination.page + i) > 1 && (pagination.page + i) < pagination.totalPages">
+                      <button (click)="onPageChange(pagination.page + i)"
+                            [ngClass]="{'pagination-btn': true, 'active': i === 0}">
+                        {{ pagination.page + i }}
+                      </button>
+                    </ng-container>
+                  </ng-container>
+                  
+                  <!-- Ellipsis if not near end -->
+                  <span *ngIf="pagination.page < pagination.totalPages - 2" class="pagination-ellipsis">...</span>
+                  
+                  <!-- Last page -->
+                  <button (click)="onPageChange(pagination.totalPages)"
+                         [ngClass]="{'pagination-btn': true, 'active': pagination.page === pagination.totalPages}">
+                    {{ pagination.totalPages }}
+                  </button>
+                </ng-container>
+                
+                <button [disabled]="pagination.page === pagination.totalPages" 
+                       (click)="onPageChange(pagination.page + 1)"
+                       [ngClass]="{'pagination-btn': true, 'disabled': pagination.page === pagination.totalPages}">
+                  <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>

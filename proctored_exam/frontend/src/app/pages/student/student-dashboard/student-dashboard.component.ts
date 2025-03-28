@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ExamService } from 'src/app/services/exam.service';
 import { AuthService } from 'src/app/services/auth.service';
-import { AnalyticService } from '../../services/analytic.service';
+import { AnalyticService } from '../../../services/analytic.service';
 import { LeaderboardService } from 'src/app/services/leaderboard.service';
 import { TutorialService } from 'src/app/services/tutorial.service';
 

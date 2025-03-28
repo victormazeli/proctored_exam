@@ -2,9 +2,9 @@
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { LessonService } from '../../services/lesson.service';
+import { LessonService } from '../../../services/lesson.service';
 import { MarkdownService } from 'ngx-markdown';
-import { AuthService } from '../../services/auth.service';
+import { AuthService } from '../../../services/auth.service';
 
 // Define interfaces for our data types
 interface Lesson {
