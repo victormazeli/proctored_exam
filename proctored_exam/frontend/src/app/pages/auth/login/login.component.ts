@@ -13,7 +13,7 @@ export class LoginComponent {
   loginForm: FormGroup;
   loading = false;
   submitted = false;
-  returnUrl: string = '/dashboard';
+  returnUrl: string = '/student/dashboard';
   
 
   constructor(
