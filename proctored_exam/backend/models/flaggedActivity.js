@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
 
-const FlaggedActivitySchema = new Schema({
+const FlaggedActivitySchema = new mongoose.Schema({
   attemptId: {
     type: Schema.Types.ObjectId,
     ref: 'Attempt',

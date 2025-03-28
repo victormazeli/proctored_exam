@@ -28,7 +28,6 @@ const CertificationSchema = new mongoose.Schema({
   provider: {
     type: String,
     required: true,
-    enum: ['AWS', 'Terraform', 'Kubernetes']
   },
   description: {
     type: String
